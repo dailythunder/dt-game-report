@@ -1,0 +1,101 @@
+{
+  "meta": {
+    "game_id": "0022500001",
+    "date": "2025-10-20",
+    "season": "2025-26",
+    "home_team_tricode": "LAL",
+    "away_team_tricode": "OKC",
+    "arena": "Crypto.com Arena",
+    "city": "Los Angeles, CA",
+    "final_score_home": 92,
+    "final_score_away": 121
+  },
+  "teams": {
+    "home": { "tricode": "LAL", "full_name": "Los Angeles Lakers", "logo_url": "" },
+    "away": { "tricode": "OKC", "full_name": "Oklahoma City Thunder", "logo_url": "" }
+  },
+  "largest_lead": { "home": 4, "away": 22 },
+  "game_totals": {
+    "traditional": {
+      "home": { "fg": 34, "fga": 80, "fg3": 8, "fg3a": 28, "ft": 16, "fta": 21, "orb": 8, "drb": 28, "trb": 36, "ast": 22, "stl": 6, "blk": 3, "tov": 14, "pf": 18, "pts": 92 },
+      "away": { "fg": 45, "fga": 89, "fg3": 16, "fg3a": 39, "ft": 15, "fta": 18, "orb": 10, "drb": 34, "trb": 44, "ast": 29, "stl": 8, "blk": 7, "tov": 10, "pf": 17, "pts": 121 }
+    },
+    "advanced": {
+      "home": { "off_rating": 108.0, "def_rating": 132.0, "net_rating": -24.0, "efg_pct": 0.525, "ts_pct": 0.545, "pace": 99.5 },
+      "away": { "off_rating": 132.0, "def_rating": 108.0, "net_rating": 24.0, "efg_pct": 0.610, "ts_pct": 0.630, "pace": 99.5 }
+    },
+    "misc": {
+      "home": { "pitp": 40, "second_chance": 10, "fast_break": 11, "points_off_to": 12 },
+      "away": { "pitp": 50, "second_chance": 13, "fast_break": 19, "points_off_to": 21 }
+    }
+  },
+  "quarters": [
+    { "number": 1, "home_score": 23, "away_score": 30,
+      "team_totals": {
+        "traditional": {
+          "home": { "fg": 9, "fga": 23, "fg3": 3, "fg3a": 9, "ft": 2, "fta": 3, "trb": 9, "ast": 5, "stl": 1, "blk": 1, "tov": 4, "pts": 23 },
+          "away": { "fg": 11, "fga": 24, "fg3": 4, "fg3a": 10, "ft": 4, "fta": 4, "trb": 11, "ast": 7, "stl": 2, "blk": 2, "tov": 2, "pts": 30 }
+        }
+      },
+      "players": {
+        "home": [
+          { "name": "LeBron James", "min": "8:30", "fg": 4, "fga": 7, "fg3": 1, "fg3a": 3, "ft": 1, "fta": 1, "trb": 3, "ast": 2, "stl": 0, "blk": 0, "tov": 1, "pts": 10 }
+        ],
+        "away": [
+          { "name": "Shai Gilgeous-Alexander", "min": "9:00", "fg": 4, "fga": 6, "fg3": 1, "fg3a": 2, "ft": 3, "fta": 3, "trb": 2, "ast": 2, "stl": 1, "blk": 0, "tov": 0, "pts": 12 },
+          { "name": "Chet Holmgren", "min": "8:00", "fg": 3, "fga": 5, "fg3": 1, "fg3a": 2, "ft": 0, "fta": 0, "trb": 4, "ast": 1, "stl": 0, "blk": 2, "tov": 0, "pts": 7 }
+        ]
+      }
+    }
+  ],
+  "players": {
+    "home": [
+      {
+        "player_id": 2544,
+        "name": "LeBron James",
+        "position": "F",
+        "starter": true,
+        "min": "34:20",
+        "traditional": { "fg": 11, "fga": 22, "fg3": 3, "fg3a": 8, "ft": 5, "fta": 6, "trb": 8, "ast": 7, "stl": 2, "blk": 2, "tov": 4, "pts": 30 },
+        "advanced": { "ts_pct": 0.640, "efg_pct": 0.590, "usg_pct": 30.0, "off_rating": 118.0, "def_rating": 114.0 }
+      }
+    ],
+    "away": [
+      {
+        "player_id": 1628983,
+        "name": "Shai Gilgeous-Alexander",
+        "position": "G",
+        "starter": true,
+        "min": "34:45",
+        "traditional": { "fg": 13, "fga": 21, "fg3": 3, "fg3a": 5, "ft": 9, "fta": 10, "trb": 5, "ast": 7, "stl": 3, "blk": 1, "tov": 2, "pts": 38 },
+        "advanced": { "ts_pct": 0.720, "efg_pct": 0.667, "usg_pct": 31.0, "off_rating": 130.0, "def_rating": 109.0 }
+      },
+      {
+        "player_id": 1629637,
+        "name": "Chet Holmgren",
+        "position": "C",
+        "starter": true,
+        "min": "32:30",
+        "traditional": { "fg": 8, "fga": 14, "fg3": 2, "fg3a": 5, "ft": 4, "fta": 4, "trb": 13, "ast": 3, "stl": 1, "blk": 4, "tov": 1, "pts": 22 },
+        "advanced": { "ts_pct": 0.690, "efg_pct": 0.643, "usg_pct": 24.0, "off_rating": 125.0, "def_rating": 106.0 }
+      }
+    ]
+  },
+  "leaders": {
+    "home": {
+      "points": { "value": 30, "players": ["LeBron James"] },
+      "rebounds": { "value": 10, "players": ["Anthony Davis"] },
+      "assists": { "value": 8, "players": ["D'Angelo Russell"] },
+      "blocks": { "value": 2, "players": ["Anthony Davis"] },
+      "steals": { "value": 2, "players": ["LeBron James", "Austin Reaves"] }
+    },
+    "away": {
+      "points": { "value": 38, "players": ["Shai Gilgeous-Alexander"] },
+      "rebounds": { "value": 13, "players": ["Chet Holmgren"] },
+      "assists": { "value": 7, "players": ["Shai Gilgeous-Alexander"] },
+      "blocks": { "value": 4, "players": ["Chet Holmgren"] },
+      "steals": { "value": 3, "players": ["Shai Gilgeous-Alexander"] }
+    }
+  },
+  "files": { "play_by_play_csv": "play_by_play.csv" }
+}

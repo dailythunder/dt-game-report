@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>DT Game Report — {{ data.teams.away.tricode }} @ {{ data.teams.home.tricode }}</title>
+</head>
+<body>
+  <h1>DT Game Report</h1>
+  <h2>{{ data.teams.away.tricode }} {{ data.meta.final_score_away }} @ {{ data.teams.home.tricode }} {{ data.meta.final_score_home }}</h2>
+  <p>Largest lead: {{ data.teams.away.tricode }} +{{ data.largest_lead.away }}, {{ data.teams.home.tricode }} +{{ data.largest_lead.home }}</p>
+
+  <h3>Score by quarter</h3>
+  <table border="1">
+    <tr>
+      <th>Team</th>
+      {% for q in data.quarters %}<th>Q{{ q.number }}</th>{% endfor %}
+    </tr>
+    <tr>
+      <td>{{ data.teams.away.tricode }}</td>
+      {% for q in data.quarters %}<td>{{ q.away_score }}</td>{% endfor %}
+    </tr>
+    <tr>
+      <td>{{ data.teams.home.tricode }}</td>
+      {% for q in data.quarters %}<td>{{ q.home_score }}</td>{% endfor %}
+    </tr>
+  </table>
+</body>
+</html>
