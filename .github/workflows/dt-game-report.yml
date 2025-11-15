@@ -29,8 +29,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Generate DT Game Report
-        run: python -m dt_game_report.generate_report
+      - name: Generate DT Game Report (fixture)
+        run: |
+          export PYTHONPATH=src
+          python -m dt_game_report.generate_report
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
