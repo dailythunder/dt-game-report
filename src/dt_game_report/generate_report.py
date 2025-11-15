@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import argparse
 import json
 from pathlib import Path
 from typing import Any, Dict
@@ -15,23 +16,38 @@ def get_repo_root() -> Path:
       repo_root/
         src/dt_game_report/generate_report.py
         templates/report.html.jinja
-        fixtures/example_game.json
+        fixtures/*.json
     """
     return Path(__file__).resolve().parents[2]
 
 
-def load_game_data(fixtures_dir: Path) -> Dict[str, Any]:
-    """
-    Load the example game JSON from fixtures/.
+def parse_args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser(
+        description="Generate DT Game Report HTML from a JSON game file."
+    )
+    parser.add_argument(
+        "--game-json",
+        type=str,
+        default=None,
+        help=(
+            "Path to a game JSON file matching the DT Game Report schema. "
+            "If omitted, fixtures/example_game.json will be used."
+        ),
+    )
+    return parser.parse_args()
 
-    For now we always use example_game.json.
-    Later this can be swapped for a cached real-game file.
+
+def load_game_data(json_path: Path) -> Dict[str, Any]:
     """
-    json_path = fixtures_dir / "example_game.json"
+    Load a game JSON file.
+
+    The JSON is expected to follow the DT Game Report schema
+    (similar to fixtures/example_game.json).
+    """
     if not json_path.exists():
-        raise FileNotFoundError(f"Could not find fixture JSON at: {json_path}")
+        raise FileNotFoundError(f"Could not find game JSON at: {json_path}")
 
-    print(f"[DT Game Report] Loading fixture JSON: {json_path}")
+    print(f"[DT Game Report] Loading game JSON: {json_path}")
     with json_path.open("r", encoding="utf-8") as f:
         data = json.load(f)
 
@@ -48,7 +64,7 @@ def load_game_data(fixtures_dir: Path) -> Dict[str, Any]:
     ]
     missing = [k for k in required_top_keys if k not in data]
     if missing:
-        raise KeyError(f"Fixture JSON is missing keys: {missing}")
+        raise KeyError(f"Game JSON is missing keys: {missing}")
 
     return data
 
@@ -85,15 +101,22 @@ def write_output(
     data: Dict[str, Any],
 ) -> None:
     """
-    Write the rendered HTML to output/report.html and copy any supporting files
-    (like the play-by-play CSV) into the output folder.
+    Write the rendered HTML to output/index.html and output/report.html,
+    and copy any supporting files (like the play-by-play CSV) into the
+    output folder.
     """
     output_dir = repo_root / "output"
     output_dir.mkdir(exist_ok=True)
 
-    html_path = output_dir / "report.html"
-    print(f"[DT Game Report] Writing HTML report to: {html_path}")
-    html_path.write_text(html, encoding="utf-8")
+    # main report
+    report_path = output_dir / "report.html"
+    print(f"[DT Game Report] Writing HTML report to: {report_path}")
+    report_path.write_text(html, encoding="utf-8")
+
+    # index.html for GitHub Pages root
+    index_path = output_dir / "index.html"
+    print(f"[DT Game Report] Writing index.html for GitHub Pages to: {index_path}")
+    index_path.write_text(html, encoding="utf-8")
 
     # Copy the PBP CSV into the output folder if it exists
     pbp_name = data.get("files", {}).get("play_by_play_csv")
@@ -108,27 +131,40 @@ def write_output(
     else:
         print("[DT Game Report] No play-by-play CSV referenced in data.files")
 
-    print("[DT Game Report] Done. Open output/report.html in your browser to view the sample.")
+    print("[DT Game Report] Done. Open output/index.html or output/report.html to view the report.")
 
 
 def main() -> None:
     """
     Entry point used by GitHub Actions and local runs.
 
-    For now this is a pure fixture-driven pipeline:
+    By default this is a fixture-driven pipeline:
       - load fixtures/example_game.json
       - render templates/report.html.jinja
-      - write output/report.html (+ copy PBP CSV)
+      - write output/index.html and output/report.html (+ copy PBP CSV)
+
+    If --game-json is provided, that file will be used instead of the fixture.
     """
+    args = parse_args()
     repo_root = get_repo_root()
-    fixtures_dir = repo_root / "fixtures"
+
+    if args.game_json:
+        json_path = Path(args.game_json)
+        if not json_path.is_absolute():
+            json_path = repo_root / args.game_json
+        fixtures_dir = json_path.parent
+    else:
+        fixtures_dir = repo_root / "fixtures"
+        json_path = fixtures_dir / "example_game.json"
+
     templates_dir = repo_root / "templates"
 
     print(f"[DT Game Report] Repo root: {repo_root}")
-    print(f"[DT Game Report] Fixtures dir: {fixtures_dir}")
+    print(f"[DT Game Report] Game JSON: {json_path}")
+    print(f"[DT Game Report] Fixtures dir (for CSV, etc.): {fixtures_dir}")
     print(f"[DT Game Report] Templates dir: {templates_dir}")
 
-    data = load_game_data(fixtures_dir)
+    data = load_game_data(json_path)
     env = build_jinja_env(templates_dir)
     html = render_report(env, data)
     write_output(html, repo_root, fixtures_dir, data)
