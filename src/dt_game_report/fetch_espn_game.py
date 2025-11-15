@@ -239,11 +239,11 @@ def _parse_boxscore(summary: Dict[str, Any]) -> Dict[str, Any]:
                             "pts": 0,
                         },
                         "advanced": {
-                            "ts_pct": None,
-                            "efg_pct": None,
-                            "usg_pct": None,
-                            "off_rating": None,
-                            "def_rating": None,
+                            "ts_pct": 0.0,
+                            "efg_pct": 0.0,
+                            "usg_pct": 0.0,
+                            "off_rating": 0.0,
+                            "def_rating": 0.0,
                         },
                     }
 
@@ -428,8 +428,10 @@ def build_dt_schema_from_espn(summary: Dict[str, Any]) -> Dict[str, Any]:
     players = _build_players_from_raw(box_data, home_abbrev, away_abbrev)
     leaders = _compute_leaders(players)
 
-    largest_lead = {"home": None, "away": None}
+    # For now: largest lead unknown -> 0 placeholders
+    largest_lead = {"home": 0, "away": 0}
 
+    # Build quarters block (scores + stubbed stats)
     quarters: List[Dict[str, Any]] = []
     for q in quarters_basic:
         quarters.append(
@@ -470,18 +472,18 @@ def build_dt_schema_from_espn(summary: Dict[str, Any]) -> Dict[str, Any]:
                     },
                     "advanced": {
                         "home": {
-                            "off_rating": None,
-                            "def_rating": None,
-                            "net_rating": None,
-                            "efg_pct": None,
-                            "ts_pct": None,
+                            "off_rating": 0.0,
+                            "def_rating": 0.0,
+                            "net_rating": 0.0,
+                            "efg_pct": 0.0,
+                            "ts_pct": 0.0,
                         },
                         "away": {
-                            "off_rating": None,
-                            "def_rating": None,
-                            "net_rating": None,
-                            "efg_pct": None,
-                            "ts_pct": None,
+                            "off_rating": 0.0,
+                            "def_rating": 0.0,
+                            "net_rating": 0.0,
+                            "efg_pct": 0.0,
+                            "ts_pct": 0.0,
                         },
                     },
                 },
@@ -492,42 +494,44 @@ def build_dt_schema_from_espn(summary: Dict[str, Any]) -> Dict[str, Any]:
             }
         )
 
+    # Game totals (advanced + misc stubbed as 0.0 so template can safely format)
     game_totals = {
         "traditional": team_totals_traditional,
         "advanced": {
             "home": {
-                "off_rating": None,
-                "def_rating": None,
-                "net_rating": None,
-                "efg_pct": None,
-                "ts_pct": None,
-                "pace": None,
+                "off_rating": 0.0,
+                "def_rating": 0.0,
+                "net_rating": 0.0,
+                "efg_pct": 0.0,
+                "ts_pct": 0.0,
+                "pace": 0.0,
             },
             "away": {
-                "off_rating": None,
-                "def_rating": None,
-                "net_rating": None,
-                "efg_pct": None,
-                "ts_pct": None,
-                "pace": None,
+                "off_rating": 0.0,
+                "def_rating": 0.0,
+                "net_rating": 0.0,
+                "efg_pct": 0.0,
+                "ts_pct": 0.0,
+                "pace": 0.0,
             },
         },
         "misc": {
             "home": {
-                "pitp": None,
-                "second_chance": None,
-                "fast_break": None,
-                "points_off_to": None,
+                "pitp": 0.0,
+                "second_chance": 0.0,
+                "fast_break": 0.0,
+                "points_off_to": 0.0,
             },
             "away": {
-                "pitp": None,
-                "second_chance": None,
-                "fast_break": None,
-                "points_off_to": None,
+                "pitp": 0.0,
+                "second_chance": 0.0,
+                "fast_break": 0.0,
+                "points_off_to": 0.0,
             },
         },
     }
 
+    # For now, still stubbed PBP CSV filename
     files = {
         "play_by_play_csv": "play_by_play.csv"
     }
