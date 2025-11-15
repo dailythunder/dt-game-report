@@ -1,4 +1,10 @@
-event_num,period,clock,home_score,away_score,description
-1,1,12:00,0,0,Jump ball
-2,1,11:40,2,0,LAL made 2-pt shot
-3,1,11:10,2,3,OKC made 3-pt shot
+period,game_clock,team,event_type,description,away_score,home_score
+1,12:00,LAL,jumpball,Game start,0,0
+1,11:40,OKC,made_shot,SGA driving layup,2,0
+1,11:10,OKC,made_shot,SGA pull-up jumper,4,0
+1,10:45,LAL,made_shot,LeBron three-pointer,4,3
+1,9:30,OKC,made_shot,Chet dunk,6,3
+1,0:00,Q,end_period,End of Q1,30,23
+2,0:00,Q,end_period,End of Q2,62,47
+3,0:00,Q,end_period,End of Q3,93,69
+4,0:00,Q,end_period,End of Q4,121,92
