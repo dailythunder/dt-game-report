@@ -12,7 +12,7 @@ import requests
 # Replace this with the ESPN event ID you want to test with.
 # You can find it in the URL of an ESPN box score, e.g.
 # https://www.espn.com/nba/game/_/gameId/401585655  -> event id "401585655"
-ESPN_EVENT_ID = "401585655"
+ESPN_EVENT_ID = "401810077"
 
 
 @dataclass
