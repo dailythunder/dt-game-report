@@ -28,9 +28,7 @@ jobs:
           python-version: "3.11"
 
       - name: Install package
-        run: |
-          python -m pip install --upgrade pip
-          pip install -e .
+        run: python -m pip install --upgrade pip && pip install -e .
 
       - name: Generate DT Game Report
         run: python -m dt_game_report.generate_report
@@ -38,12 +36,11 @@ jobs:
       - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          # This must match where generate_report writes files
           path: ./output
 
   deploy:
-    needs: build
     runs-on: ubuntu-latest
+    needs: build
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
