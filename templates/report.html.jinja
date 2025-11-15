@@ -153,6 +153,10 @@
     }
 
     .downloads { font-size: 0.85rem; }
+
+    .team-block {
+      margin-top: 10px;
+    }
   </style>
 </head>
 <body>
@@ -181,7 +185,8 @@
 
     <div class="meta">
       Season {{ data.meta.season }} · {{ data.teams.away.full_name }} at {{ data.teams.home.full_name }} ·
-      Largest lead: {{ data.teams.away.tricode }} +{{ data.largest_lead.away }}, {{ data.teams.home.tricode }} +{{ data.largest_lead.home }}
+      Largest lead: {{ data.teams.away.tricode }} +{{ data.largest_lead.away }},
+      {{ data.teams.home.tricode }} +{{ data.largest_lead.home }}
     </div>
 
     <!-- SCORE + LEADERS GRID -->
@@ -329,176 +334,183 @@
       </div>
     </section>
 
-    <!-- FULL GAME BOX — TRADITIONAL -->
+    <!-- FULL GAME BOX — TRADITIONAL (STACKED) -->
     <section class="section">
       <h2>Full game box score — traditional</h2>
-      <div class="two-col">
-        <div>
-          <h3>{{ data.teams.away.full_name }}</h3>
-          {% set team = data.game_totals.traditional.away %}
-          <table>
-            <tr>
-              <th class="name">Player</th>
-              <th>MIN</th>
-              <th>FG</th><th>FG%</th>
-              <th>3P</th><th>3P%</th>
-              <th>FT</th><th>FT%</th>
-              <th>TRB</th><th>AST</th><th>STL</th><th>BLK</th><th>TOV</th><th>PTS</th>
-            </tr>
-            <tr>
-              <td class="name"><strong>Team</strong></td>
-              <td>-</td>
-              <td>{{ team.fg }}/{{ team.fga }}</td>
-              <td>{% if team.fga %}{{ "%.1f"|format(100 * team.fg / team.fga) }}{% else %}-{% endif %}</td>
-              <td>{{ team.fg3 }}/{{ team.fg3a }}</td>
-              <td>{% if team.fg3a %}{{ "%.1f"|format(100 * team.fg3 / team.fg3a) }}{% else %}-{% endif %}</td>
-              <td>{{ team.ft }}/{{ team.fta }}</td>
-              <td>{% if team.fta %}{{ "%.1f"|format(100 * team.ft / team.fta) }}{% else %}-{% endif %}</td>
-              <td>{{ team.trb }}</td><td>{{ team.ast }}</td><td>{{ team.stl }}</td><td>{{ team.blk }}</td><td>{{ team.tov }}</td><td>{{ team.pts }}</td>
-            </tr>
-            {% for p in data.players.away %}
-            {% set t = p.traditional %}
-            <tr>
-              <td class="name">{{ p.name }}</td>
-              <td>{{ p.min }}</td>
-              <td>{{ t.fg }}/{{ t.fga }}</td>
-              <td>{% if t.fga %}{{ "%.1f"|format(100 * t.fg / t.fga) }}{% else %}-{% endif %}</td>
-              <td>{{ t.fg3 }}/{{ t.fg3a }}</td>
-              <td>{% if t.fg3a %}{{ "%.1f"|format(100 * t.fg3 / t.fg3a) }}{% else %}-{% endif %}</td>
-              <td>{{ t.ft }}/{{ t.fta }}</td>
-              <td>{% if t.fta %}{{ "%.1f"|format(100 * t.ft / t.fta) }}{% else %}-{% endif %}</td>
-              <td>{{ t.trb }}</td><td>{{ t.ast }}</td><td>{{ t.stl }}</td><td>{{ t.blk }}</td><td>{{ t.tov }}</td><td>{{ t.pts }}</td>
-            </tr>
-            {% endfor %}
-          </table>
-        </div>
-        <div>
-          <h3>{{ data.teams.home.full_name }}</h3>
-          {% set team = data.game_totals.traditional.home %}
-          <table>
-            <tr>
-              <th class="name">Player</th>
-              <th>MIN</th>
-              <th>FG</th><th>FG%</th>
-              <th>3P</th><th>3P%</th>
-              <th>FT</th><th>FT%</th>
-              <th>TRB</th><th>AST</th><th>STL</th><th>BLK</th><th>TOV</th><th>PTS</th>
-            </tr>
-            <tr>
-              <td class="name"><strong>Team</strong></td>
-              <td>-</td>
-              <td>{{ team.fg }}/{{ team.fga }}</td>
-              <td>{% if team.fga %}{{ "%.1f"|format(100 * team.fg / team.fga) }}{% else %}-{% endif %}</td>
-              <td>{{ team.fg3 }}/{{ team.fg3a }}</td>
-              <td>{% if team.fg3a %}{{ "%.1f"|format(100 * team.fg3 / team.fg3a) }}{% else %}-{% endif %}</td>
-              <td>{{ team.ft }}/{{ team.fta }}</td>
-              <td>{% if team.fta %}{{ "%.1f"|format(100 * team.ft / team.fta) }}{% else %}-{% endif %}</td>
-              <td>{{ team.trb }}</td><td>{{ team.ast }}</td><td>{{ team.stl }}</td><td>{{ team.blk }}</td><td>{{ team.tov }}</td><td>{{ team.pts }}</td>
-            </tr>
-            {% for p in data.players.home %}
-            {% set t = p.traditional %}
-            <tr>
-              <td class="name">{{ p.name }}</td>
-              <td>{{ p.min }}</td>
-              <td>{{ t.fg }}/{{ t.fga }}</td>
-              <td>{% if t.fga %}{{ "%.1f"|format(100 * t.fg / t.fga) }}{% else %}-{% endif %}</td>
-              <td>{{ t.fg3 }}/{{ t.fg3a }}</td>
-              <td>{% if t.fg3a %}{{ "%.1f"|format(100 * t.fg3 / t.fg3a) }}{% else %}-{% endif %}</td>
-              <td>{{ t.ft }}/{{ t.fta }}</td>
-              <td>{% if t.fta %}{{ "%.1f"|format(100 * t.ft / t.fta) }}{% else %}-{% endif %}</td>
-              <td>{{ t.trb }}</td><td>{{ t.ast }}</td><td>{{ t.stl }}</td><td>{{ t.blk }}</td><td>{{ t.tov }}</td><td>{{ t.pts }}</td>
-            </tr>
-            {% endfor %}
-          </table>
-        </div>
+
+      <div class="team-block">
+        <h3>{{ data.teams.away.full_name }}</h3>
+        {% set team = data.game_totals.traditional.away %}
+        <table>
+          <tr>
+            <th class="name">Player</th>
+            <th>MIN</th>
+            <th>FG</th><th>FG%</th>
+            <th>3P</th><th>3P%</th>
+            <th>FT</th><th>FT%</th>
+            <th>TRB</th><th>AST</th><th>STL</th><th>BLK</th><th>TOV</th><th>PTS</th>
+          </tr>
+          <tr>
+            <td class="name"><strong>Team</strong></td>
+            <td>-</td>
+            <td>{{ team.fg }}/{{ team.fga }}</td>
+            <td>{% if team.fga %}{{ "%.1f"|format(100 * team.fg / team.fga) }}{% else %}-{% endif %}</td>
+            <td>{{ team.fg3 }}/{{ team.fg3a }}</td>
+            <td>{% if team.fg3a %}{{ "%.1f"|format(100 * team.fg3 / team.fg3a) }}{% else %}-{% endif %}</td>
+            <td>{{ team.ft }}/{{ team.fta }}</td>
+            <td>{% if team.fta %}{{ "%.1f"|format(100 * team.ft / team.fta) }}{% else %}-{% endif %}</td>
+            <td>{{ team.trb }}</td><td>{{ team.ast }}</td><td>{{ team.stl }}</td>
+            <td>{{ team.blk }}</td><td>{{ team.tov }}</td><td>{{ team.pts }}</td>
+          </tr>
+          {% for p in data.players.away %}
+          {% set t = p.traditional %}
+          <tr>
+            <td class="name">{{ p.name }}</td>
+            <td>{{ p.min }}</td>
+            <td>{{ t.fg }}/{{ t.fga }}</td>
+            <td>{% if t.fga %}{{ "%.1f"|format(100 * t.fg / t.fga) }}{% else %}-{% endif %}</td>
+            <td>{{ t.fg3 }}/{{ t.fg3a }}</td>
+            <td>{% if t.fg3a %}{{ "%.1f"|format(100 * t.fg3 / t.fg3a) }}{% else %}-{% endif %}</td>
+            <td>{{ t.ft }}/{{ t.fta }}</td>
+            <td>{% if t.fta %}{{ "%.1f"|format(100 * t.ft / t.fta) }}{% else %}-{% endif %}</td>
+            <td>{{ t.trb }}</td><td>{{ t.ast }}</td><td>{{ t.stl }}</td>
+            <td>{{ t.blk }}</td><td>{{ t.tov }}</td><td>{{ t.pts }}</td>
+          </tr>
+          {% endfor %}
+        </table>
+      </div>
+
+      <div class="team-block">
+        <h3>{{ data.teams.home.full_name }}</h3>
+        {% set team = data.game_totals.traditional.home %}
+        <table>
+          <tr>
+            <th class="name">Player</th>
+            <th>MIN</th>
+            <th>FG</th><th>FG%</th>
+            <th>3P</th><th>3P%</th>
+            <th>FT</th><th>FT%</th>
+            <th>TRB</th><th>AST</th><th>STL</th><th>BLK</th><th>TOV</th><th>PTS</th>
+          </tr>
+          <tr>
+            <td class="name"><strong>Team</strong></td>
+            <td>-</td>
+            <td>{{ team.fg }}/{{ team.fga }}</td>
+            <td>{% if team.fga %}{{ "%.1f"|format(100 * team.fg / team.fga) }}{% else %}-{% endif %}</td>
+            <td>{{ team.fg3 }}/{{ team.fg3a }}</td>
+            <td>{% if team.fg3a %}{{ "%.1f"|format(100 * team.fg3 / team.fg3a) }}{% else %}-{% endif %}</td>
+            <td>{{ team.ft }}/{{ team.fta }}</td>
+            <td>{% if team.fta %}{{ "%.1f"|format(100 * team.ft / team.fta) }}{% else %}-{% endif %}</td>
+            <td>{{ team.trb }}</td><td>{{ team.ast }}</td><td>{{ team.stl }}</td>
+            <td>{{ team.blk }}</td><td>{{ team.tov }}</td><td>{{ team.pts }}</td>
+          </tr>
+          {% for p in data.players.home %}
+          {% set t = p.traditional %}
+          <tr>
+            <td class="name">{{ p.name }}</td>
+            <td>{{ p.min }}</td>
+            <td>{{ t.fg }}/{{ t.fga }}</td>
+            <td>{% if t.fga %}{{ "%.1f"|format(100 * t.fg / t.fga) }}{% else %}-{% endif %}</td>
+            <td>{{ t.fg3 }}/{{ t.fg3a }}</td>
+            <td>{% if t.fg3a %}{{ "%.1f"|format(100 * t.fg3 / t.fg3a) }}{% else %}-{% endif %}</td>
+            <td>{{ t.ft }}/{{ t.fta }}</td>
+            <td>{% if t.fta %}{{ "%.1f"|format(100 * t.ft / t.fta) }}{% else %}-{% endif %}</td>
+            <td>{{ t.trb }}</td><td>{{ t.ast }}</td><td>{{ t.stl }}</td>
+            <td>{{ t.blk }}</td><td>{{ t.tov }}</td><td>{{ t.pts }}</td>
+          </tr>
+          {% endfor %}
+        </table>
       </div>
     </section>
 
-    <!-- QUARTER BY QUARTER TRADITIONAL -->
+    <!-- QUARTER BY QUARTER — TRADITIONAL (STACKED) -->
     <section class="section">
       <h2>Quarter-by-quarter — traditional</h2>
       <div class="section-sub">Team totals row at top, then player rows for that quarter.</div>
 
       {% for q in data.quarters %}
         <h3>Q{{ q.number }}</h3>
-        <div class="two-col">
-          <div>
-            <h4>{{ data.teams.away.tricode }}</h4>
-            {% set team = q.team_totals.traditional.away %}
-            <table>
-              <tr>
-                <th class="name">Player</th>
-                <th>MIN</th>
-                <th>FG</th><th>FG%</th>
-                <th>3P</th><th>3P%</th>
-                <th>FT</th><th>FT%</th>
-                <th>TRB</th><th>AST</th><th>STL</th><th>BLK</th><th>TOV</th><th>PTS</th>
-              </tr>
-              <tr>
-                <td class="name"><strong>Team</strong></td>
-                <td>-</td>
-                <td>{{ team.fg }}/{{ team.fga }}</td>
-                <td>{% if team.fga %}{{ "%.1f"|format(100 * team.fg / team.fga) }}{% else %}-{% endif %}</td>
-                <td>{{ team.fg3 }}/{{ team.fg3a }}</td>
-                <td>{% if team.fg3a %}{{ "%.1f"|format(100 * team.fg3 / team.fg3a) }}{% else %}-{% endif %}</td>
-                <td>{{ team.ft }}/{{ team.fta }}</td>
-                <td>{% if team.fta %}{{ "%.1f"|format(100 * team.ft / team.fta) }}{% else %}-{% endif %}</td>
-                <td>{{ team.trb }}</td><td>{{ team.ast }}</td><td>{{ team.stl }}</td><td>{{ team.blk }}</td><td>{{ team.tov }}</td><td>{{ team.pts }}</td>
-              </tr>
-              {% for p in q.players.away %}
-              <tr>
-                <td class="name">{{ p.name }}</td>
-                <td>{{ p.min }}</td>
-                <td>{{ p.fg }}/{{ p.fga }}</td>
-                <td>{% if p.fga %}{{ "%.1f"|format(100 * p.fg / p.fga) }}{% else %}-{% endif %}</td>
-                <td>{{ p.fg3 }}/{{ p.fg3a }}</td>
-                <td>{% if p.fg3a %}{{ "%.1f"|format(100 * p.fg3 / p.fg3a) }}{% else %}-{% endif %}</td>
-                <td>{{ p.ft }}/{{ p.fta }}</td>
-                <td>{% if p.fta %}{{ "%.1f"|format(100 * p.ft / p.fta) }}{% else %}-{% endif %}</td>
-                <td>{{ p.trb }}</td><td>{{ p.ast }}</td><td>{{ p.stl }}</td><td>{{ p.blk }}</td><td>{{ p.tov }}</td><td>{{ p.pts }}</td>
-              </tr>
-              {% endfor %}
-            </table>
-          </div>
 
-          <div>
-            <h4>{{ data.teams.home.tricode }}</h4>
-            {% set team = q.team_totals.traditional.home %}
-            <table>
-              <tr>
-                <th class="name">Player</th>
-                <th>MIN</th>
-                <th>FG</th><th>FG%</th>
-                <th>3P</th><th>3P%</th>
-                <th>FT</th><th>FT%</th>
-                <th>TRB</th><th>AST</th><th>STL</th><th>BLK</th><th>TOV</th><th>PTS</th>
-              </tr>
-              <tr>
-                <td class="name"><strong>Team</strong></td>
-                <td>-</td>
-                <td>{{ team.fg }}/{{ team.fga }}</td>
-                <td>{% if team.fga %}{{ "%.1f"|format(100 * team.fg / team.fga) }}{% else %}-{% endif %}</td>
-                <td>{{ team.fg3 }}/{{ team.fg3a }}</td>
-                <td>{% if team.fg3a %}{{ "%.1f"|format(100 * team.fg3 / team.fg3a) }}{% else %}-{% endif %}</td>
-                <td>{{ team.ft }}/{{ team.fta }}</td>
-                <td>{% if team.fta %}{{ "%.1f"|format(100 * team.ft / team.fta) }}{% else %}-{% endif %}</td>
-                <td>{{ team.trb }}</td><td>{{ team.ast }}</td><td>{{ team.stl }}</td><td>{{ team.blk }}</td><td>{{ team.tov }}</td><td>{{ team.pts }}</td>
-              </tr>
-              {% for p in q.players.home %}
-              <tr>
-                <td class="name">{{ p.name }}</td>
-                <td>{{ p.min }}</td>
-                <td>{{ p.fg }}/{{ p.fga }}</td>
-                <td>{% if p.fga %}{{ "%.1f"|format(100 * p.fg / p.fga) }}{% else %}-{% endif %}</td>
-                <td>{{ p.fg3 }}/{{ p.fg3a }}</td>
-                <td>{% if p.fg3a %}{{ "%.1f"|format(100 * p.fg3 / p.fg3a) }}{% else %}-{% endif %}</td>
-                <td>{{ p.ft }}/{{ p.fta }}</td>
-                <td>{% if p.fta %}{{ "%.1f"|format(100 * p.ft / p.fta) }}{% else %}-{% endif %}</td>
-                <td>{{ p.trb }}</td><td>{{ p.ast }}</td><td>{{ p.stl }}</td><td>{{ p.blk }}</td><td>{{ p.tov }}</td><td>{{ p.pts }}</td>
-              </tr>
-              {% endfor %}
-            </table>
-          </div>
+        <div class="team-block">
+          <h4>{{ data.teams.away.tricode }}</h4>
+          {% set team = q.team_totals.traditional.away %}
+          <table>
+            <tr>
+              <th class="name">Player</th>
+              <th>MIN</th>
+              <th>FG</th><th>FG%</th>
+              <th>3P</th><th>3P%</th>
+              <th>FT</th><th>FT%</th>
+              <th>TRB</th><th>AST</th><th>STL</th><th>BLK</th><th>TOV</th><th>PTS</th>
+            </tr>
+            <tr>
+              <td class="name"><strong>Team</strong></td>
+              <td>-</td>
+              <td>{{ team.fg }}/{{ team.fga }}</td>
+              <td>{% if team.fga %}{{ "%.1f"|format(100 * team.fg / team.fga) }}{% else %}-{% endif %}</td>
+              <td>{{ team.fg3 }}/{{ team.fg3a }}</td>
+              <td>{% if team.fg3a %}{{ "%.1f"|format(100 * team.fg3 / team.fg3a) }}{% else %}-{% endif %}</td>
+              <td>{{ team.ft }}/{{ team.fta }}</td>
+              <td>{% if team.fta %}{{ "%.1f"|format(100 * team.ft / team.fta) }}{% else %}-{% endif %}</td>
+              <td>{{ team.trb }}</td><td>{{ team.ast }}</td><td>{{ team.stl }}</td>
+              <td>{{ team.blk }}</td><td>{{ team.tov }}</td><td>{{ team.pts }}</td>
+            </tr>
+            {% for p in q.players.away %}
+            <tr>
+              <td class="name">{{ p.name }}</td>
+              <td>{{ p.min }}</td>
+              <td>{{ p.fg }}/{{ p.fga }}</td>
+              <td>{% if p.fga %}{{ "%.1f"|format(100 * p.fg / p.fga) }}{% else %}-{% endif %}</td>
+              <td>{{ p.fg3 }}/{{ p.fg3a }}</td>
+              <td>{% if p.fg3a %}{{ "%.1f"|format(100 * p.fg3 / p.fg3a) }}{% else %}-{% endif %}</td>
+              <td>{{ p.ft }}/{{ p.fta }}</td>
+              <td>{% if p.fta %}{{ "%.1f"|format(100 * p.ft / p.fta) }}{% else %}-{% endif %}</td>
+              <td>{{ p.trb }}</td><td>{{ p.ast }}</td><td>{{ p.stl }}</td>
+              <td>{{ p.blk }}</td><td>{{ p.tov }}</td><td>{{ p.pts }}</td>
+            </tr>
+            {% endfor %}
+          </table>
+        </div>
+
+        <div class="team-block">
+          <h4>{{ data.teams.home.tricode }}</h4>
+          {% set team = q.team_totals.traditional.home %}
+          <table>
+            <tr>
+              <th class="name">Player</th>
+              <th>MIN</th>
+              <th>FG</th><th>FG%</th>
+              <th>3P</th><th>3P%</th>
+              <th>FT</th><th>FT%</th>
+              <th>TRB</th><th>AST</th><th>STL</th><th>BLK</th><th>TOV</th><th>PTS</th>
+            </tr>
+            <tr>
+              <td class="name"><strong>Team</strong></td>
+              <td>-</td>
+              <td>{{ team.fg }}/{{ team.fga }}</td>
+              <td>{% if team.fga %}{{ "%.1f"|format(100 * team.fg / team.fga) }}{% else %}-{% endif %}</td>
+              <td>{{ team.fg3 }}/{{ team.fg3a }}</td>
+              <td>{% if team.fg3a %}{{ "%.1f"|format(100 * team.fg3 / team.fg3a) }}{% else %}-{% endif %}</td>
+              <td>{{ team.ft }}/{{ team.fta }}</td>
+              <td>{% if team.fta %}{{ "%.1f"|format(100 * team.ft / team.fta) }}{% else %}-{% endif %}</td>
+              <td>{{ team.trb }}</td><td>{{ team.ast }}</td><td>{{ team.stl }}</td>
+              <td>{{ team.blk }}</td><td>{{ team.tov }}</td><td>{{ team.pts }}</td>
+            </tr>
+            {% for p in q.players.home %}
+            <tr>
+              <td class="name">{{ p.name }}</td>
+              <td>{{ p.min }}</td>
+              <td>{{ p.fg }}/{{ p.fga }}</td>
+              <td>{% if p.fga %}{{ "%.1f"|format(100 * p.fg / p.fga) }}{% else %}-{% endif %}</td>
+              <td>{{ p.fg3 }}/{{ p.fg3a }}</td>
+              <td>{% if p.fg3a %}{{ "%.1f"|format(100 * p.fg3 / p.fg3a) }}{% else %}-{% endif %}</td>
+              <td>{{ p.ft }}/{{ p.fta }}</td>
+              <td>{% if p.fta %}{{ "%.1f"|format(100 * p.ft / p.fta) }}{% else %}-{% endif %}</td>
+              <td>{{ p.trb }}</td><td>{{ p.ast }}</td><td>{{ p.stl }}</td>
+              <td>{{ p.blk }}</td><td>{{ p.tov }}</td><td>{{ p.pts }}</td>
+            </tr>
+            {% endfor %}
+          </table>
         </div>
       {% endfor %}
     </section>
