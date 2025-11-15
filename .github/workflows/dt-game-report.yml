@@ -1,8 +1,8 @@
-name: DT Game Report
+name: Deploy DT Game Report
 
 on:
   push:
-    branches: [ main ]
+    branches: ["main"]
   workflow_dispatch:
 
 permissions:
@@ -17,6 +17,7 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -26,18 +27,19 @@ jobs:
         with:
           python-version: "3.11"
 
-      - name: Install dependencies
-        run: pip install -r requirements.txt
+      - name: Install package
+      - run: |
+          python -m pip install --upgrade pip
+          pip install -e .
 
-      - name: Generate DT Game Report (fixture)
-        run: |
-          export PYTHONPATH=src
-          python -m dt_game_report.generate_report
+      - name: Generate DT Game Report
+        run: python -m dt_game_report.generate_report
 
-      - name: Upload Pages artifact
+      - name: Upload artifact for GitHub Pages
         uses: actions/upload-pages-artifact@v3
         with:
-          path: site
+          # IMPORTANT: this must match where generate_report writes files
+          path: ./output
 
   deploy:
     needs: build
@@ -45,6 +47,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
+
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
