@@ -137,9 +137,27 @@
       .two-col { grid-template-columns: 1fr; }
     }
 
-    .leaders ul { list-style: none; padding: 0; margin: 4px 0 0 0; font-size: 0.85rem; }
-    .leaders li { margin: 2px 0; }
-    .leaders-label { display: inline-block; min-width: 70px; color: var(--text-muted); }
+    /* leaders layout fix */
+    .leaders ul {
+      list-style: none;
+      padding: 0;
+      margin: 4px 0 0 0;
+      font-size: 0.85rem;
+    }
+    .leaders li {
+      margin: 4px 0;
+      display: grid;
+      grid-template-columns: 70px 1fr;
+      column-gap: 6px;
+      align-items: flex-start;
+    }
+    .leaders-label {
+      color: var(--text-muted);
+      font-weight: 500;
+    }
+    .leaders-value {
+      white-space: normal;
+    }
 
     .pill {
       display: inline-block;
@@ -154,9 +172,7 @@
 
     .downloads { font-size: 0.85rem; }
 
-    .team-block {
-      margin-top: 10px;
-    }
+    .team-block { margin-top: 10px; }
 
     .quarter-block {
       border-top: 1px solid var(--border-light);
@@ -227,28 +243,78 @@
           <div>
             <h3>{{ data.teams.away.tricode }}</h3>
             <ul>
-              <li><span class="leaders-label">Points</span> {{ data.leaders.away.points.value }} — {{ data.leaders.away.points.players | join(", ") }}</li>
-              <li><span class="leaders-label">Rebounds</span> {{ data.leaders.away.rebounds.value }} — {{ data.leaders.away.rebounds.players | join(", ") }}</li>
-              <li><span class="leaders-label">Assists</span> {{ data.leaders.away.assists.value }} — {{ data.leaders.away.assists.players | join(", ") }}</li>
-              <li><span class="leaders-label">Blocks</span> {{ data.leaders.away.blocks.value }} — {{ data.leaders.away.blocks.players | join(", ") }}</li>
-              <li><span class="leaders-label">Steals</span> {{ data.leaders.away.steals.value }} — {{ data.leaders.away.steals.players | join(", ") }}</li>
+              <li>
+                <span class="leaders-label">Points</span>
+                <span class="leaders-value">
+                  {{ data.leaders.away.points.value }} — {{ data.leaders.away.points.players | join(", ") }}
+                </span>
+              </li>
+              <li>
+                <span class="leaders-label">Rebounds</span>
+                <span class="leaders-value">
+                  {{ data.leaders.away.rebounds.value }} — {{ data.leaders.away.rebounds.players | join(", ") }}
+                </span>
+              </li>
+              <li>
+                <span class="leaders-label">Assists</span>
+                <span class="leaders-value">
+                  {{ data.leaders.away.assists.value }} — {{ data.leaders.away.assists.players | join(", ") }}
+                </span>
+              </li>
+              <li>
+                <span class="leaders-label">Blocks</span>
+                <span class="leaders-value">
+                  {{ data.leaders.away.blocks.value }} — {{ data.leaders.away.blocks.players | join(", ") }}
+                </span>
+              </li>
+              <li>
+                <span class="leaders-label">Steals</span>
+                <span class="leaders-value">
+                  {{ data.leaders.away.steals.value }} — {{ data.leaders.away.steals.players | join(", ") }}
+                </span>
+              </li>
             </ul>
           </div>
           <div>
             <h3>{{ data.teams.home.tricode }}</h3>
             <ul>
-              <li><span class="leaders-label">Points</span> {{ data.leaders.home.points.value }} — {{ data.leaders.home.points.players | join(", ") }}</li>
-              <li><span class="leaders-label">Rebounds</span> {{ data.leaders.home.rebounds.value }} — {{ data.leaders.home.rebounds.players | join(", ") }}</li>
-              <li><span class="leaders-label">Assists</span> {{ data.leaders.home.assists.value }} — {{ data.leaders.home.assists.players | join(", ") }}</li>
-              <li><span class="leaders-label">Blocks</span> {{ data.leaders.home.blocks.value }} — {{ data.leaders.home.blocks.players | join(", ") }}</li>
-              <li><span class="leaders-label">Steals</span> {{ data.leaders.home.steals.value }} — {{ data.leaders.home.steals.players | join(", ") }}</li>
+              <li>
+                <span class="leaders-label">Points</span>
+                <span class="leaders-value">
+                  {{ data.leaders.home.points.value }} — {{ data.leaders.home.points.players | join(", ") }}
+                </span>
+              </li>
+              <li>
+                <span class="leaders-label">Rebounds</span>
+                <span class="leaders-value">
+                  {{ data.leaders.home.rebounds.value }} — {{ data.leaders.home.rebounds.players | join(", ") }}
+                </span>
+              </li>
+              <li>
+                <span class="leaders-label">Assists</span>
+                <span class="leaders-value">
+                  {{ data.leaders.home.assists.value }} — {{ data.leaders.home.assists.players | join(", ") }}
+                </span>
+              </li>
+              <li>
+                <span class="leaders-label">Blocks</span>
+                <span class="leaders-value">
+                  {{ data.leaders.home.blocks.value }} — {{ data.leaders.home.blocks.players | join(", ") }}
+                </span>
+              </li>
+              <li>
+                <span class="leaders-label">Steals</span>
+                <span class="leaders-value">
+                  {{ data.leaders.home.steals.value }} — {{ data.leaders.home.steals.players | join(", ") }}
+                </span>
+              </li>
             </ul>
           </div>
         </div>
       </section>
     </div>
 
-    <!-- TEAM TOTALS TRADITIONAL -->
+    <!-- TEAM TOTALS — TRADITIONAL -->
     <section class="section">
       <h2>Team totals — traditional</h2>
       <div class="two-col">
@@ -303,7 +369,7 @@
       </div>
     </section>
 
-    <!-- TEAM TOTALS ADVANCED -->
+    <!-- TEAM TOTALS — ADVANCED -->
     <section class="section">
       <h2>Team totals — advanced</h2>
       <div class="two-col">
@@ -340,7 +406,7 @@
       </div>
     </section>
 
-    <!-- FULL GAME BOX — TRADITIONAL (STACKED, TEAM TOTALS AT BOTTOM) -->
+    <!-- FULL GAME BOX — TRADITIONAL -->
     <section class="section">
       <h2>Full game box score — traditional</h2>
 
@@ -429,7 +495,7 @@
       </div>
     </section>
 
-    <!-- QUARTER BY QUARTER — TRADITIONAL (STACKED, TEAM TOTALS AT BOTTOM) -->
+    <!-- QUARTER BY QUARTER — TRADITIONAL -->
     <section class="section">
       <h2>Quarter-by-quarter — traditional</h2>
       <div class="section-sub">Team totals row at bottom, player rows above for that quarter.</div>
@@ -559,9 +625,9 @@
     <!-- DOWNLOADS -->
     <section class="section downloads">
       <h2>Downloads</h2>
-      <p>Play-by-play CSV (fixture): {{ data.files.play_by_play_csv }}</p>
+      <p>Play-by-play CSV: {{ data.files.play_by_play_csv }}</p>
       <p style="font-size:0.8rem;color:var(--text-muted);">
-        Quarter-by-quarter advanced tables and a game-flow chart will be added when we wire in live play-by-play and advanced splits.
+        Quarter-by-quarter advanced tables and a game-flow chart will be added when live play-by-play and advanced splits are wired in.
       </p>
     </section>
 
