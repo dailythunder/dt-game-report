@@ -51,7 +51,7 @@ def _build_team_maps(summary: Dict[str, Any]) -> Dict[str, Any]:
     for c in competitors:
         side = c.get("homeAway")
         team = c.get("team", {}) or {}
-        tid = str(team.get("id"))
+        tid = str(team.get("id")) if team.get("id") is not None else None
         if not tid or not side:
             continue
         team_id_to_side[tid] = side
@@ -64,6 +64,61 @@ def _build_team_maps(summary: Dict[str, Any]) -> Dict[str, Any]:
         "team_id_to_side": team_id_to_side,
         "competition": comp,
     }
+
+
+def _build_player_maps(
+    summary: Dict[str, Any],
+    team_id_to_side: Dict[str, str],
+) -> Dict[str, Any]:
+    """
+    Build a mapping of player (athlete) ids to basic info.
+
+    Returns:
+      {
+        "players_by_id": {
+            "athlete_id": {
+                "id": "athlete_id",
+                "name": "Shai Gilgeous-Alexander",
+                "short_name": "S. Gilgeous-Alexander",
+                "jersey": "2",
+                "team_id": "1610612760",
+                "side": "home" | "away" | None,
+            },
+            ...
+        }
+      }
+    """
+    players_by_id: Dict[str, Dict[str, Any]] = {}
+
+    boxscore = summary.get("boxscore") or {}
+    teams_players = boxscore.get("players") or []
+
+    for team_block in teams_players:
+        team = team_block.get("team") or {}
+        tid = str(team.get("id")) if team.get("id") is not None else None
+        side = team_id_to_side.get(tid)
+
+        for stat_block in team_block.get("statistics") or []:
+            for ath_entry in stat_block.get("athletes") or []:
+                athlete = ath_entry.get("athlete") or {}
+                aid = athlete.get("id")
+                if aid is None:
+                    continue
+                aid_str = str(aid)
+                if aid_str in players_by_id:
+                    # Don't overwrite; first occurrence is enough for identity
+                    continue
+
+                players_by_id[aid_str] = {
+                    "id": aid_str,
+                    "name": athlete.get("displayName"),
+                    "short_name": athlete.get("shortName"),
+                    "jersey": athlete.get("jersey"),
+                    "team_id": tid,
+                    "side": side,
+                }
+
+    return {"players_by_id": players_by_id}
 
 
 def _extract_basic_play_sequence(summary: Dict[str, Any]) -> List[Dict[str, Any]]:
@@ -79,8 +134,9 @@ def _extract_basic_play_sequence(summary: Dict[str, Any]) -> List[Dict[str, Any]
           'away_score': int,
           'team_id': str | None,
           'scoring_play': bool,
-          'score_value': int,  # points on this play (0 if non-scoring),
+          'score_value': int,
           'text': str,
+          'athlete_ids': [str, ...],
         }
     """
     plays_raw = summary.get("plays") or []
@@ -119,6 +175,20 @@ def _extract_basic_play_sequence(summary: Dict[str, Any]) -> List[Dict[str, Any]
             delta_away = away_score - last_away
             score_val = max(delta_home, delta_away, 0)
 
+        athlete_ids: List[str] = []
+        participants = p.get("participants") or p.get("athletesInvolved") or []
+        for part in participants:
+            athlete = part.get("athlete") if isinstance(part, dict) else None
+            if isinstance(athlete, dict):
+                aid = athlete.get("id")
+                if aid is not None:
+                    athlete_ids.append(str(aid))
+                    continue
+            if isinstance(part, dict):
+                aid = part.get("id")
+                if aid is not None:
+                    athlete_ids.append(str(aid))
+
         seq.append(
             {
                 "index": idx,
@@ -130,6 +200,7 @@ def _extract_basic_play_sequence(summary: Dict[str, Any]) -> List[Dict[str, Any]
                 "scoring_play": scoring_play,
                 "score_value": score_val if scoring_play else 0,
                 "text": text,
+                "athlete_ids": athlete_ids,
             }
         )
 
@@ -161,25 +232,73 @@ def compute_quarter_team_points(
     return result
 
 
+def compute_quarter_player_points(
+    plays_seq: List[Dict[str, Any]],
+    team_id_to_side: Dict[str, str],
+    players_by_id: Dict[str, Dict[str, Any]],
+) -> Dict[int, Dict[str, Dict[str, Any]]]:
+    """
+    Return points by quarter and player.
+
+    Structure:
+      {
+        quarter: {
+          player_id: {
+            "player_id": "...",
+            "name": "Full Name",
+            "team_id": "XXXX",
+            "side": "home" | "away" | None,
+            "points": int,
+          },
+          ...
+        },
+        ...
+      }
+    """
+    result: Dict[int, Dict[str, Dict[str, Any]]] = {}
+
+    for pl in plays_seq:
+        if not pl.get("scoring_play"):
+            continue
+        period = pl.get("period")
+        if period is None:
+            continue
+
+        athlete_ids = pl.get("athlete_ids") or []
+        if not athlete_ids:
+            continue
+
+        scorer_id = athlete_ids[0]
+        pts = int(pl.get("score_value") or 0)
+        if pts <= 0:
+            continue
+
+        player_meta = players_by_id.get(scorer_id, {})
+        team_id = player_meta.get("team_id")
+        side = player_meta.get("side") or team_id_to_side.get(team_id)
+
+        if period not in result:
+            result[period] = {}
+
+        qb = result[period]
+        if scorer_id not in qb:
+            qb[scorer_id] = {
+                "player_id": scorer_id,
+                "name": player_meta.get("name"),
+                "team_id": team_id,
+                "side": side,
+                "points": 0,
+            }
+
+        qb[scorer_id]["points"] += pts
+
+    return result
+
+
 def compute_unanswered_runs(
     plays_seq: List[Dict[str, Any]], team_id_to_side: Dict[str, str], min_points: int = 7
 ) -> List[Dict[str, Any]]:
-    """
-    Compute 7+ point unanswered runs by either team.
-
-    Returns list of runs with:
-      {
-        'side': 'home' or 'away',
-        'team_id': 'XXX',
-        'points': 10,
-        'start_index': 12,
-        'end_index': 20,
-        'start_period': 2,
-        'start_clock': '5:12',
-        'end_period': 2,
-        'end_clock': '3:01',
-      }
-    """
+    """Compute 7+ point unanswered runs by either team."""
     runs: List[Dict[str, Any]] = []
 
     current_side: Optional[str] = None
@@ -226,14 +345,12 @@ def compute_unanswered_runs(
         elif side == current_side:
             current_points += pts
         else:
-            # other team scored: end previous run, maybe start new
             flush_run(pl)
             current_side = side
             current_team_id = team_id
             current_points = pts
             start_play = pl
 
-    # tail
     if plays_seq:
         flush_run(plays_seq[-1])
 
@@ -243,25 +360,13 @@ def compute_unanswered_runs(
 def compute_net_runs(
     plays_seq: List[Dict[str, Any]], team_id_to_side: Dict[str, str], min_margin: int = 8
 ) -> List[Dict[str, Any]]:
-    """
-    Compute 8+ point net runs by either team.
-
-    A net run is a contiguous stretch of plays where one team
-    builds a net scoring margin of at least `min_margin` from the
-    start of that stretch, and the run ends when the opponent
-    fully erases the lead (net <= 0 from that side's perspective).
-
-    We use the scoreboard margin for stability:
-      margin = home_score - away_score
-      home perspective = margin
-      away perspective = -margin
-    """
+    """Compute 8+ point net runs by either team."""
     runs: List[Dict[str, Any]] = []
 
-    current_side: Optional[str] = None  # 'home' or 'away'
+    current_side: Optional[str] = None
     current_team_id: Optional[str] = None
     start_play: Optional[Dict[str, Any]] = None
-    start_margin_side: Optional[int] = None  # margin from this side's perspective
+    start_margin_side: Optional[int] = None
     current_net: int = 0
     last_scoring_play: Optional[Dict[str, Any]] = None
 
@@ -300,12 +405,10 @@ def compute_net_runs(
         team_id = pl.get("team_id")
         side_scorer = team_id_to_side.get(team_id) if team_id else None
         if side_scorer not in ("home", "away"):
-            # if we don't know who scored, just end any current run
             flush_run(pl)
             continue
 
         if current_side is None:
-            # start a new potential run from this scoring play
             current_side = side_scorer
             current_team_id = team_id
             start_play = pl
@@ -313,18 +416,13 @@ def compute_net_runs(
             current_net = 0
             continue
 
-        # We have an ongoing run
-        # Compute margin from the perspective of the current run owner
         cur_margin_side = margin_for_side(pl, current_side)
         net_change = cur_margin_side - (start_margin_side or 0)
 
         if side_scorer == current_side:
-            # Same side scoring, net change should increase or stay
             current_net = net_change
         else:
-            # Opponent scored; see if they have fully erased the lead
             if net_change < 0:
-                # run is broken; flush if big enough, then start new run for opponent
                 flush_run(pl)
                 current_side = side_scorer
                 current_team_id = team_id
@@ -332,10 +430,8 @@ def compute_net_runs(
                 start_margin_side = margin_for_side(pl, current_side)
                 current_net = 0
             else:
-                # Opponent scored but hasn't fully erased lead; we keep run alive
                 current_net = net_change
 
-    # tail flush
     if last_scoring_play is not None:
         flush_run(last_scoring_play)
 
@@ -348,31 +444,12 @@ def compute_highlight_runs(
     min_for: int = 8,
     max_against: int = 5,
 ) -> List[Dict[str, Any]]:
-    """
-    Compute highlight runs using the user's "start at each scoring play" logic.
-
-    For each scoring play P (potential run start for its scoring team A):
-      - team_a_score = 0
-      - team_b_score = 0
-      - max_net = 0
-      - best_run_endpoint = None
-      - Walk forward through subsequent scoring plays Q:
-          * If Q is team A -> team_a_score += points
-          * If Q is opponent -> team_b_score += points
-          * current_net = team_a_score - team_b_score
-          * If current_net >= min_for and team_b_score <= max_against
-                and current_net > max_net:
-              - Update max_net and best_run_endpoint (and remember scores)
-          * If team_b_score > max_against: break for this start P.
-      - If best_run_endpoint exists, record a run P -> best_run_endpoint
-        with points_for = team_a_score_at_best, points_against = team_b_score_at_best.
-    """
+    """Compute highlight runs using start-at-each-scoring-play logic."""
     runs: List[Dict[str, Any]] = []
 
-    # Only consider scoring plays
     scoring_events = [pl for pl in plays_seq if pl.get("scoring_play")]
-
     n = len(scoring_events)
+
     for i in range(n):
         start_ev = scoring_events[i]
         start_team_id = start_ev.get("team_id")
@@ -396,7 +473,6 @@ def compute_highlight_runs(
                 team_a_score += pts
             elif ev_side in ("home", "away"):
                 team_b_score += pts
-            # else: ignore unknown side
 
             current_net = team_a_score - team_b_score
 
@@ -450,25 +526,24 @@ def run_analysis(game_id: Optional[str] = None) -> None:
     team_id_to_side = maps["team_id_to_side"]
     comp = maps["competition"]
 
+    player_maps = _build_player_maps(summary, team_id_to_side)
+    players_by_id = player_maps["players_by_id"]
+
     plays_seq = _extract_basic_play_sequence(summary)
 
-    # quarter-by-quarter team points from plays
     q_points = compute_quarter_team_points(plays_seq, team_id_to_side)
+    q_player_points = compute_quarter_player_points(
+        plays_seq, team_id_to_side, players_by_id
+    )
 
-    # 7+ unanswered runs (pure 7-0+ stretches)
     unanswered_runs = compute_unanswered_runs(
         plays_seq, team_id_to_side, min_points=7
     )
-
-    # 8+ net runs (big swings, both teams)
     net_runs = compute_net_runs(plays_seq, team_id_to_side, min_margin=8)
-
-    # highlight runs using your "start at each scoring play" logic
     highlight_runs = compute_highlight_runs(
         plays_seq, team_id_to_side, min_for=8, max_against=5
     )
 
-    # basic meta
     season = summary.get("header", {}).get("season", {}).get("year")
     date_iso = comp.get("date", "")
     game_date = date_iso.split("T")[0] if "T" in date_iso else date_iso
@@ -482,6 +557,7 @@ def run_analysis(game_id: Optional[str] = None) -> None:
         "season": season,
         "teams": teams_by_side,
         "quarter_team_points": q_points,
+        "quarter_player_points": q_player_points,
         "unanswered_runs": unanswered_runs,
         "net_runs": net_runs,
         "highlight_runs": highlight_runs,
@@ -497,8 +573,9 @@ def run_analysis(game_id: Optional[str] = None) -> None:
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Lab script: quarter team points + 7+ unanswered runs "
-            "+ 8+ net runs + highlight runs (>=8 pts, opponent <=5)"
+            "Lab script: quarter team points + quarter player points "
+            "+ 7+ unanswered runs + 8+ net runs + highlight runs "
+            "(>=8 pts, opponent <=5)"
         )
     )
     parser.add_argument(
