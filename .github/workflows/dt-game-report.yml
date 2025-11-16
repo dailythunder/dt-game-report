@@ -1,18 +1,12 @@
-name: Deploy DT Game Report
+name: DT Game Report
 
 on:
-  push:
-    branches: ["main"]
   workflow_dispatch:
-
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: "pages"
-  cancel-in-progress: true
+    inputs:
+      game_id:
+        description: "ESPN game id (e.g. 401810077). Leave blank to use the latest completed OKC game."
+        required: false
+        default: ""
 
 jobs:
   build:
@@ -28,32 +22,43 @@ jobs:
           python-version: "3.11"
 
       - name: Install dependencies
-        run: python -m pip install --upgrade pip && pip install jinja2 requests
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
 
-      - name: Fetch ESPN game JSON
-        run: python src/dt_game_report/fetch_espn_game.py
+      - name: Fetch ESPN data (summary + play-by-play)
+        env:
+          GAME_ID: ${{ github.event.inputs.game_id }}
+        run: |
+          if [ -n "$GAME_ID" ]; then
+            echo "Using explicit ESPN game id: $GAME_ID"
+            python -m dt_game_report.fetch_espn_data --game-id "$GAME_ID"
+          else
+            echo "No game id provided; fetching latest completed OKC game from ESPN"
+            python -m dt_game_report.fetch_espn_data
+          fi
 
-      - name: Upload DT game JSON artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: dt-game-json
-          path: fixtures/espn_*.json
+      - name: Generate HTML report
+        # If your generate_report.py needs GAME_ID via env, it can read this
+        env:
+          GAME_ID: ${{ github.event.inputs.game_id }}
+        run: |
+          python -m dt_game_report.generate_report
 
-      - name: Generate DT Game Report from ESPN JSON
-        run: python src/dt_game_report/generate_report.py --game-json fixtures/espn_401810077.json
-
-      - name: Upload artifact for GitHub Pages
+      - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:
-          path: ./output
+          path: site
 
   deploy:
-    runs-on: ubuntu-latest
     needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-
     steps:
       - name: Deploy to GitHub Pages
         id: deployment
