@@ -241,10 +241,10 @@ def compute_unanswered_runs(
 
 
 def compute_net_runs(
-    plays_seq: List[Dict[str, Any]], team_id_to_side: Dict[str, str], min_margin: int = 7
+    plays_seq: List[Dict[str, Any]], team_id_to_side: Dict[str, str], min_margin: int = 8
 ) -> List[Dict[str, Any]]:
     """
-    Compute 7+ point net runs by either team.
+    Compute 8+ point net runs by either team.
 
     A net run is a contiguous stretch of plays where one team
     builds a net scoring margin of at least `min_margin` from the
@@ -364,13 +364,13 @@ def run_analysis(game_id: Optional[str] = None) -> None:
     # quarter-by-quarter team points from plays
     q_points = compute_quarter_team_points(plays_seq, team_id_to_side)
 
-    # 7+ unanswered runs
+    # 7+ unanswered runs (pure 7-0+ stretches)
     unanswered_runs = compute_unanswered_runs(
         plays_seq, team_id_to_side, min_points=7
     )
 
-    # 7+ net runs
-    net_runs = compute_net_runs(plays_seq, team_id_to_side, min_margin=7)
+    # 8+ net runs (big swings, both teams)
+    net_runs = compute_net_runs(plays_seq, team_id_to_side, min_margin=8)
 
     # basic meta
     season = summary.get("header", {}).get("season", {}).get("year")
@@ -382,7 +382,7 @@ def run_analysis(game_id: Optional[str] = None) -> None:
 
     out = {
         "game_id": game_id,
-        "date": game_date,
+            "date": game_date,
         "season": season,
         "teams": teams_by_side,
         "quarter_team_points": q_points,
@@ -399,7 +399,7 @@ def run_analysis(game_id: Optional[str] = None) -> None:
 
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Lab script: compute quarter team points + 7+ runs (unanswered + net)"
+        description="Lab script: compute quarter team points + 7+ unanswered runs + 8+ net runs"
     )
     parser.add_argument(
         "--game-id",
