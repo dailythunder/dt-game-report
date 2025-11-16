@@ -28,7 +28,7 @@ def http_get_json(url: str, *, params: Optional[Dict[str, Any]] = None) -> Dict[
 def find_latest_okc_game_id() -> str:
     """Return the most recent *completed* Thunder game id from ESPN."""
     # ESPN team schedule endpoint; includes past and future games
-    url = "https://site.web.api.espn.com/apis/v2/sports/basketball/nba/teams/{team}/schedule".format(
+    url = "https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{team}/schedule".format(
         team=TEAM_ABBR
     )
     data = http_get_json(url)
@@ -73,7 +73,7 @@ def fetch_espn_summary(game_id: str) -> Dict[str, Any]:
 
     This includes box score, leaders, win probability, *and* a flat list of plays.
     """
-    url = "https://site.web.api.espn.com/apis/v2/sports/basketball/nba/summary"
+    url = "https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/summary"
     params = {"event": game_id}
     return http_get_json(url, params=params)
 
