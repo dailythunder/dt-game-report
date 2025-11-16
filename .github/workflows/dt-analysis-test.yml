@@ -33,9 +33,9 @@ jobs:
         run: |
           echo "GAME_ID is: '${GAME_ID}'"
           if [ -z "$GAME_ID" ]; then
-            python -m dt_game_report.lab_quarters_and_runs
+            python src/dt_game_report/lab_quarters_and_runs.py
           else
-            python -m dt_game_report.lab_quarters_and_runs --game-id "$GAME_ID"
+            python src/dt_game_report/lab_quarters_and_runs.py --game-id "$GAME_ID"
           fi
 
       - name: Upload analysis artifacts
