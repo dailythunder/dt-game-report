@@ -429,13 +429,12 @@
           </tbody>
         </table>
 
-        <h3>Team Misc Scoring</h3>
+        <h3>Team Misc Stats</h3>
         <table>
           <thead>
             <tr>
               <th>Team</th>
-              <th>Points in Paint</th>
-              <th>2nd Chance Points</th>
+              <th>Points in the Paint</th>
               <th>Points off Turnovers</th>
               <th>Fast Break Points</th>
             </tr>
@@ -443,16 +442,14 @@
           <tbody>
             <tr>
               <td class="team-name-cell">{{ data.teams.away.tricode }}</td>
-              <td>{{ misc_away.points_in_paint if misc_away.points_in_paint is defined else 0 }}</td>
-              <td>{{ misc_away.second_chance if misc_away.second_chance is defined else 0 }}</td>
-              <td>{{ misc_away.points_off_turnovers if misc_away.points_off_turnovers is defined else 0 }}</td>
+              <td>{{ misc_away.pitp if misc_away.pitp is defined else 0 }}</td>
+              <td>{{ misc_away.points_off_to if misc_away.points_off_to is defined else 0 }}</td>
               <td>{{ misc_away.fast_break if misc_away.fast_break is defined else 0 }}</td>
             </tr>
             <tr>
               <td class="team-name-cell">{{ data.teams.home.tricode }}</td>
-              <td>{{ misc_home.points_in_paint if misc_home.points_in_paint is defined else 0 }}</td>
-              <td>{{ misc_home.second_chance if misc_home.second_chance is defined else 0 }}</td>
-              <td>{{ misc_home.points_off_turnovers if misc_home.points_off_turnovers is defined else 0 }}</td>
+              <td>{{ misc_home.pitp if misc_home.pitp is defined else 0 }}</td>
+              <td>{{ misc_home.points_off_to if misc_home.points_off_to is defined else 0 }}</td>
               <td>{{ misc_home.fast_break if misc_home.fast_break is defined else 0 }}</td>
             </tr>
           </tbody>
@@ -475,7 +472,7 @@
             </div>
             <div class="leaders-chip">
               <span class="label">REB</span>
-              {{ away_leaders.rebounds.value }} – {{ away_leaders.rebounds.players | join(", ") }}
+              {{ away_leaders.rebounds.value }} – {{ away_leaders.rebounds.rebounds | default(away_leaders.rebounds.players) | join(", ") }}
             </div>
             <div class="leaders-chip">
               <span class="label">AST</span>
@@ -647,7 +644,6 @@
 
               {% set q_team_trad = q.team_totals.traditional %}
 
-              <!-- Away team quarter box -->
               {% for side in ["away", "home"] %}
                 {% set team = data.teams[side] %}
                 {% set q_players = q.players[side] %}
