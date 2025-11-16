@@ -1,0 +1,46 @@
+name: DT Game Report Analytics Test
+
+on:
+  workflow_dispatch:
+    inputs:
+      game_id:
+        description: "ESPN game id (e.g. 401810084). Leave blank to use latest fixtures summary."
+        required: false
+        default: ""
+
+jobs:
+  analysis-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
+          if [ -f pyproject.toml ] || [ -f setup.py ]; then pip install -e . || true; fi
+
+      - name: Run lab analysis (quarters + runs)
+        env:
+          GAME_ID: ${{ github.event.inputs.game_id }}
+        run: |
+          echo "GAME_ID is: '${GAME_ID}'"
+          if [ -z "$GAME_ID" ]; then
+            python -m dt_game_report.lab_quarters_and_runs
+          else
+            python -m dt_game_report.lab_quarters_and_runs --game-id "$GAME_ID"
+          fi
+
+      - name: Upload analysis artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dt-analysis-json
+          path: fixtures/analysis/*.json
+          if-no-files-found: warn
