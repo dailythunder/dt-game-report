@@ -50,7 +50,10 @@ def _patch_team_points_from_quarters(data: Dict[str, Any]) -> None:
         for q in quarters:
             q_team = (q.get("team_totals") or {}).get("traditional") or {}
             q_side = q_team.get(side) or {}
-            summed += int(q_side.get("pts", 0))
+            try:
+                summed += int(q_side.get("pts", 0))
+            except Exception:
+                pass
         side_totals["pts"] = summed
         trad[side] = side_totals
 
@@ -70,11 +73,74 @@ def _patch_quarter_scores_from_team_totals(data: Dict[str, Any]) -> None:
         away_tt = team_totals.get("away") or {}
 
         if not q.get("home_score"):
-            q["home_score"] = int(home_tt.get("pts", 0))
+            try:
+                q["home_score"] = int(home_tt.get("pts", 0))
+            except Exception:
+                q["home_score"] = 0
         if not q.get("away_score"):
-            q["away_score"] = int(away_tt.get("pts", 0))
+            try:
+                q["away_score"] = int(away_tt.get("pts", 0))
+            except Exception:
+                q["away_score"] = 0
 
     data["quarters"] = quarters
+
+
+def _rebuild_full_game_players_from_quarters(data: Dict[str, Any]) -> None:
+    """
+    Build full-game player stat lines by aggregating quarter-by-quarter
+    player stats. This fills flat stat keys (fg, fga, fg3, ... pts) on
+    data["players"].home/away entries so the full-game box is not empty.
+    """
+    quarters: List[Dict[str, Any]] = data.get("quarters") or []
+    players_block = data.get("players") or {"home": [], "away": []}
+
+    stat_keys = ["fg", "fga", "fg3", "fg3a", "ft", "fta",
+                 "trb", "ast", "stl", "blk", "tov", "pf", "pts"]
+
+    # Aggregate stats by side + player name
+    agg: Dict[str, Dict[str, Dict[str, int]]] = {"home": {}, "away": {}}
+
+    for q in quarters:
+        q_players = q.get("players") or {}
+        for side in ("home", "away"):
+            side_q_players = q_players.get(side) or []
+            for p in side_q_players:
+                name = p.get("name")
+                if not name:
+                    continue
+                side_bucket = agg[side].setdefault(name, {k: 0 for k in stat_keys})
+                for k in stat_keys:
+                    try:
+                        side_bucket[k] += int(p.get(k, 0))
+                    except Exception:
+                        # If something is weirdly non-numeric, ignore it
+                        pass
+
+    # Now merge aggregated stats into the main players list
+    for side in ("home", "away"):
+        side_players = players_block.get(side) or []
+        new_side_players: List[Dict[str, Any]] = []
+        for p in side_players:
+            name = p.get("name")
+            if not name:
+                new_side_players.append(p)
+                continue
+
+            stats = agg[side].get(name)
+            if stats:
+                for k, v in stats.items():
+                    p[k] = v
+                # Also give a "traditional" dict for templates that expect nested stats
+                p["traditional"] = dict(stats)
+            else:
+                # No stats found (e.g., DNP) — keep as-is, but ensure traditional exists
+                p.setdefault("traditional", {k: 0 for k in stat_keys})
+            new_side_players.append(p)
+
+        players_block[side] = new_side_players
+
+    data["players"] = players_block
 
 
 def _recompute_leaders_from_quarters(data: Dict[str, Any]) -> None:
@@ -82,8 +148,7 @@ def _recompute_leaders_from_quarters(data: Dict[str, Any]) -> None:
     Recompute leaders (points, rebounds, assists, blocks, steals)
     by aggregating quarter-level player stats.
 
-    This avoids relying on whatever placeholder/full-game player
-    block happens to be in the JSON.
+    This avoids relying on placeholder/full-game player blocks.
     """
     quarters: List[Dict[str, Any]] = data.get("quarters") or []
     # side -> name -> stats
@@ -107,8 +172,11 @@ def _recompute_leaders_from_quarters(data: Dict[str, Any]) -> None:
                     continue
                 if name not in side_agg:
                     side_agg[name] = {k: 0 for k in stat_keys.values()}
-                for stat_name, key in stat_keys.items():
-                    val = int(p.get(key, 0))
+                for _, key in stat_keys.items():
+                    try:
+                        val = int(p.get(key, 0))
+                    except Exception:
+                        val = 0
                     side_agg[name][key] += val
 
     def leaders_for_side(side: str) -> Dict[str, Any]:
@@ -148,11 +216,13 @@ def patch_data(data: Dict[str, Any]) -> Dict[str, Any]:
     Apply small, safe fixes on top of the JSON produced by fetch_espn_game:
       - Fill missing game-level team points from quarter totals
       - Fill missing quarter scoreboard (home_score / away_score)
+      - Build full-game player stats by aggregating quarter stats
       - Recompute leaders from quarter player stats
     """
-    print("[DT Game Report] Patching data (team pts, quarter scores, leaders)...")
+    print("[DT Game Report] Patching data (team pts, quarter scores, full-game box, leaders)...")
     _patch_team_points_from_quarters(data)
     _patch_quarter_scores_from_team_totals(data)
+    _rebuild_full_game_players_from_quarters(data)
     _recompute_leaders_from_quarters(data)
     return data
 
