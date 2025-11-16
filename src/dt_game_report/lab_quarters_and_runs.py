@@ -351,121 +351,89 @@ def compute_highlight_runs(
     """
     Compute "highlight" runs like 16-1, 14-2, 12-3, etc.
 
-    Definition:
-      - Contiguous stretch of scoring plays.
-      - From the perspective of one side (home/away).
-      - points_for >= min_for
-      - points_against <= max_against
-      - We track the best (peak) sub-stretch inside a window so that an
-        interior 16-1 can still be recorded even if the overall window
-        later becomes, say, 20-6.
+    Sliding-window per side:
+      - We consider only scoring plays.
+      - For each side (home/away), keep a window [L, R] over scoring plays.
+      - points_for = that side's points in the window
+      - points_against = opponent's points in the window
+      - Maintain constraint: points_against <= max_against by sliding L forward.
+      - Whenever points_for >= min_for and points_against <= max_against,
+        record if its net (for - against) is the best so far for that side.
+
+    This should find "core" bursts like a 16-1 run even when they're
+    embedded in a larger stretch of mixed scoring.
     """
     runs: List[Dict[str, Any]] = []
 
-    current_side: Optional[str] = None
-    current_team_id: Optional[str] = None
-    start_play: Optional[Dict[str, Any]] = None
-    points_for: int = 0
-    points_against: int = 0
+    # Build a list of scoring plays only
+    scoring_events = [pl for pl in plays_seq if pl.get("scoring_play")]
 
-    # Best (peak) run inside this window that satisfies thresholds
-    best_for: int = 0
-    best_against: int = 0
-    best_end_play: Optional[Dict[str, Any]] = None
+    # Map side -> team_id (use first we see for each side)
+    side_to_team_id: Dict[str, str] = {}
+    for tid, side in team_id_to_side.items():
+        if side not in side_to_team_id:
+            side_to_team_id[side] = tid
 
-    def flush_best() -> None:
-        nonlocal current_side, current_team_id, start_play
-        nonlocal points_for, points_against, best_for, best_against, best_end_play
-        if (
-            current_side
-            and start_play
-            and best_end_play
-            and best_for >= min_for
-            and best_against <= max_against
-        ):
-            runs.append(
-                {
-                    "side": current_side,
-                    "team_id": current_team_id,
-                    "points_for": best_for,
-                    "points_against": best_against,
-                    "net_points": best_for - best_against,
-                    "start_index": start_play["index"],
-                    "end_index": best_end_play["index"],
-                    "start_period": start_play.get("period"),
-                    "start_clock": start_play.get("clock"),
-                    "end_period": best_end_play.get("period"),
-                    "end_clock": best_end_play.get("clock"),
-                }
-            )
-        # Reset window
-        current_side = None
-        current_team_id = None
-        start_play = None
+    sides = ("home", "away")
+    for side in sides:
+        team_id = side_to_team_id.get(side)
+        if not team_id:
+            continue
+
+        L = 0
         points_for = 0
         points_against = 0
-        best_for = 0
-        best_against = 0
-        best_end_play = None
+        best_net_for_side = -1
 
-    for pl in plays_seq:
-        if not pl.get("scoring_play"):
-            continue
+        while L < len(scoring_events) and (
+            team_id_to_side.get(scoring_events[L].get("team_id")) not in ("home", "away")
+        ):
+            L += 1
 
-        team_id = pl.get("team_id")
-        side_scorer = team_id_to_side.get(team_id) if team_id else None
-        if side_scorer not in ("home", "away"):
-            # Unknown scorer: treat as a break in any highlight window
-            flush_best()
-            continue
+        # Sliding window over scoring_events
+        for R in range(len(scoring_events)):
+            ev = scoring_events[R]
+            ev_side = team_id_to_side.get(ev.get("team_id"))
+            pts = int(ev.get("score_value") or 0)
 
-        pts = int(pl.get("score_value") or 0)
+            if ev_side == side:
+                points_for += pts
+            else:
+                points_against += pts
 
-        if current_side is None:
-            # Start a new window
-            current_side = side_scorer
-            current_team_id = team_id
-            start_play = pl
-            points_for = pts
-            points_against = 0
-            # If this single play already qualifies, mark as best so far
-            if points_for >= min_for and points_against <= max_against:
-                best_for = points_for
-                best_against = points_against
-                best_end_play = pl
-            continue
+            # Shrink from the left if opponent has scored too much
+            while points_against > max_against and L <= R:
+                left_ev = scoring_events[L]
+                left_side = team_id_to_side.get(left_ev.get("team_id"))
+                left_pts = int(left_ev.get("score_value") or 0)
+                if left_side == side:
+                    points_for -= left_pts
+                else:
+                    points_against -= left_pts
+                L += 1
 
-        if side_scorer == current_side:
-            # Scoring by the same side as the window
-            points_for += pts
-        else:
-            # Opponent scores within the window
-            points_against += pts
-
-        # If still within opposition tolerance, update best if it qualifies
-        if points_against <= max_against and points_for >= min_for:
-            if points_for - points_against > best_for - best_against:
-                best_for = points_for
-                best_against = points_against
-                best_end_play = pl
-
-        # If opponent has scored too much, close this window (using best),
-        # and start a new one for the opponent from this play
-        if points_against > max_against:
-            flush_best()
-            # New window from opponent perspective
-            current_side = side_scorer
-            current_team_id = team_id
-            start_play = pl
-            points_for = pts
-            points_against = 0
-            if points_for >= min_for and points_against <= max_against:
-                best_for = points_for
-                best_against = points_against
-                best_end_play = pl
-
-    # Tail: flush any best we have at the end of the game
-    flush_best()
+            # Check if current window [L, R] is a valid highlight run
+            if L <= R and points_for >= min_for and points_against <= max_against:
+                net = points_for - points_against
+                if net > best_net_for_side:
+                    best_net_for_side = net
+                    start_ev = scoring_events[L]
+                    end_ev = scoring_events[R]
+                    runs.append(
+                        {
+                            "side": side,
+                            "team_id": team_id,
+                            "points_for": points_for,
+                            "points_against": points_against,
+                            "net_points": net,
+                            "start_index": start_ev["index"],
+                            "end_index": end_ev["index"],
+                            "start_period": start_ev.get("period"),
+                            "start_clock": start_ev.get("clock"),
+                            "end_period": end_ev.get("period"),
+                            "end_clock": end_ev.get("clock"),
+                        }
+                    )
 
     return runs
 
