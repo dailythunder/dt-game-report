@@ -349,91 +349,86 @@ def compute_highlight_runs(
     max_against: int = 5,
 ) -> List[Dict[str, Any]]:
     """
-    Compute "highlight" runs like 16-1, 14-2, 12-3, etc.
+    Compute highlight runs using the user's "start at each scoring play" logic.
 
-    Sliding-window per side:
-      - We consider only scoring plays.
-      - For each side (home/away), keep a window [L, R] over scoring plays.
-      - points_for = that side's points in the window
-      - points_against = opponent's points in the window
-      - Maintain constraint: points_against <= max_against by sliding L forward.
-      - Whenever points_for >= min_for and points_against <= max_against,
-        record if its net (for - against) is the best so far for that side.
-
-    This should find "core" bursts like a 16-1 run even when they're
-    embedded in a larger stretch of mixed scoring.
+    For each scoring play P (potential run start for its scoring team A):
+      - team_a_score = 0
+      - team_b_score = 0
+      - max_net = 0
+      - best_run_endpoint = None
+      - Walk forward through subsequent scoring plays Q:
+          * If Q is team A -> team_a_score += points
+          * If Q is opponent -> team_b_score += points
+          * current_net = team_a_score - team_b_score
+          * If current_net >= min_for and team_b_score <= max_against
+                and current_net > max_net:
+              - Update max_net and best_run_endpoint (and remember scores)
+          * If team_b_score > max_against: break for this start P.
+      - If best_run_endpoint exists, record a run P -> best_run_endpoint
+        with points_for = team_a_score_at_best, points_against = team_b_score_at_best.
     """
     runs: List[Dict[str, Any]] = []
 
-    # Build a list of scoring plays only
+    # Only consider scoring plays
     scoring_events = [pl for pl in plays_seq if pl.get("scoring_play")]
 
-    # Map side -> team_id (use first we see for each side)
-    side_to_team_id: Dict[str, str] = {}
-    for tid, side in team_id_to_side.items():
-        if side not in side_to_team_id:
-            side_to_team_id[side] = tid
-
-    sides = ("home", "away")
-    for side in sides:
-        team_id = side_to_team_id.get(side)
-        if not team_id:
+    n = len(scoring_events)
+    for i in range(n):
+        start_ev = scoring_events[i]
+        start_team_id = start_ev.get("team_id")
+        start_side = team_id_to_side.get(start_team_id)
+        if start_side not in ("home", "away"):
             continue
 
-        L = 0
-        points_for = 0
-        points_against = 0
-        best_net_for_side = -1
+        team_a_score = 0
+        team_b_score = 0
+        max_net = 0
+        best_end_ev: Optional[Dict[str, Any]] = None
+        best_for = 0
+        best_against = 0
 
-        while L < len(scoring_events) and (
-            team_id_to_side.get(scoring_events[L].get("team_id")) not in ("home", "away")
-        ):
-            L += 1
-
-        # Sliding window over scoring_events
-        for R in range(len(scoring_events)):
-            ev = scoring_events[R]
+        for j in range(i, n):
+            ev = scoring_events[j]
             ev_side = team_id_to_side.get(ev.get("team_id"))
             pts = int(ev.get("score_value") or 0)
 
-            if ev_side == side:
-                points_for += pts
-            else:
-                points_against += pts
+            if ev_side == start_side:
+                team_a_score += pts
+            elif ev_side in ("home", "away"):
+                team_b_score += pts
+            # else: ignore unknown side
 
-            # Shrink from the left if opponent has scored too much
-            while points_against > max_against and L <= R:
-                left_ev = scoring_events[L]
-                left_side = team_id_to_side.get(left_ev.get("team_id"))
-                left_pts = int(left_ev.get("score_value") or 0)
-                if left_side == side:
-                    points_for -= left_pts
-                else:
-                    points_against -= left_pts
-                L += 1
+            current_net = team_a_score - team_b_score
 
-            # Check if current window [L, R] is a valid highlight run
-            if L <= R and points_for >= min_for and points_against <= max_against:
-                net = points_for - points_against
-                if net > best_net_for_side:
-                    best_net_for_side = net
-                    start_ev = scoring_events[L]
-                    end_ev = scoring_events[R]
-                    runs.append(
-                        {
-                            "side": side,
-                            "team_id": team_id,
-                            "points_for": points_for,
-                            "points_against": points_against,
-                            "net_points": net,
-                            "start_index": start_ev["index"],
-                            "end_index": end_ev["index"],
-                            "start_period": start_ev.get("period"),
-                            "start_clock": start_ev.get("clock"),
-                            "end_period": end_ev.get("period"),
-                            "end_clock": end_ev.get("clock"),
-                        }
-                    )
+            if (
+                current_net >= min_for
+                and team_b_score <= max_against
+                and current_net > max_net
+            ):
+                max_net = current_net
+                best_end_ev = ev
+                best_for = team_a_score
+                best_against = team_b_score
+
+            if team_b_score > max_against:
+                break
+
+        if best_end_ev is not None:
+            runs.append(
+                {
+                    "side": start_side,
+                    "team_id": start_team_id,
+                    "points_for": best_for,
+                    "points_against": best_against,
+                    "net_points": best_for - best_against,
+                    "start_index": start_ev["index"],
+                    "end_index": best_end_ev["index"],
+                    "start_period": start_ev.get("period"),
+                    "start_clock": start_ev.get("clock"),
+                    "end_period": best_end_ev.get("period"),
+                    "end_clock": best_end_ev.get("clock"),
+                }
+            )
 
     return runs
 
@@ -468,7 +463,7 @@ def run_analysis(game_id: Optional[str] = None) -> None:
     # 8+ net runs (big swings, both teams)
     net_runs = compute_net_runs(plays_seq, team_id_to_side, min_margin=8)
 
-    # highlight runs: points_for >= 8, points_against <= 5, both teams
+    # highlight runs using your "start at each scoring play" logic
     highlight_runs = compute_highlight_runs(
         plays_seq, team_id_to_side, min_for=8, max_against=5
     )
@@ -502,8 +497,8 @@ def run_analysis(game_id: Optional[str] = None) -> None:
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(
         description=(
-            "Lab script: compute quarter team points + 7+ unanswered runs "
-            "+ 8+ net runs + highlight runs (>=8 pts, <=5 allowed)"
+            "Lab script: quarter team points + 7+ unanswered runs "
+            "+ 8+ net runs + highlight runs (>=8 pts, opponent <=5)"
         )
     )
     parser.add_argument(
