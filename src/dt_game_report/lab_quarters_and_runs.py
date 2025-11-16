@@ -79,7 +79,7 @@ def _extract_basic_play_sequence(summary: Dict[str, Any]) -> List[Dict[str, Any]
           'away_score': int,
           'team_id': str | None,
           'scoring_play': bool,
-          'score_value': int,  # points on this play (can be 0),
+          'score_value': int,  # points on this play (0 if non-scoring),
           'text': str,
         }
     """
@@ -342,6 +342,134 @@ def compute_net_runs(
     return runs
 
 
+def compute_highlight_runs(
+    plays_seq: List[Dict[str, Any]],
+    team_id_to_side: Dict[str, str],
+    min_for: int = 8,
+    max_against: int = 5,
+) -> List[Dict[str, Any]]:
+    """
+    Compute "highlight" runs like 16-1, 14-2, 12-3, etc.
+
+    Definition:
+      - Contiguous stretch of scoring plays.
+      - From the perspective of one side (home/away).
+      - points_for >= min_for
+      - points_against <= max_against
+      - We track the best (peak) sub-stretch inside a window so that an
+        interior 16-1 can still be recorded even if the overall window
+        later becomes, say, 20-6.
+    """
+    runs: List[Dict[str, Any]] = []
+
+    current_side: Optional[str] = None
+    current_team_id: Optional[str] = None
+    start_play: Optional[Dict[str, Any]] = None
+    points_for: int = 0
+    points_against: int = 0
+
+    # Best (peak) run inside this window that satisfies thresholds
+    best_for: int = 0
+    best_against: int = 0
+    best_end_play: Optional[Dict[str, Any]] = None
+
+    def flush_best() -> None:
+        nonlocal current_side, current_team_id, start_play
+        nonlocal points_for, points_against, best_for, best_against, best_end_play
+        if (
+            current_side
+            and start_play
+            and best_end_play
+            and best_for >= min_for
+            and best_against <= max_against
+        ):
+            runs.append(
+                {
+                    "side": current_side,
+                    "team_id": current_team_id,
+                    "points_for": best_for,
+                    "points_against": best_against,
+                    "net_points": best_for - best_against,
+                    "start_index": start_play["index"],
+                    "end_index": best_end_play["index"],
+                    "start_period": start_play.get("period"),
+                    "start_clock": start_play.get("clock"),
+                    "end_period": best_end_play.get("period"),
+                    "end_clock": best_end_play.get("clock"),
+                }
+            )
+        # Reset window
+        current_side = None
+        current_team_id = None
+        start_play = None
+        points_for = 0
+        points_against = 0
+        best_for = 0
+        best_against = 0
+        best_end_play = None
+
+    for pl in plays_seq:
+        if not pl.get("scoring_play"):
+            continue
+
+        team_id = pl.get("team_id")
+        side_scorer = team_id_to_side.get(team_id) if team_id else None
+        if side_scorer not in ("home", "away"):
+            # Unknown scorer: treat as a break in any highlight window
+            flush_best()
+            continue
+
+        pts = int(pl.get("score_value") or 0)
+
+        if current_side is None:
+            # Start a new window
+            current_side = side_scorer
+            current_team_id = team_id
+            start_play = pl
+            points_for = pts
+            points_against = 0
+            # If this single play already qualifies, mark as best so far
+            if points_for >= min_for and points_against <= max_against:
+                best_for = points_for
+                best_against = points_against
+                best_end_play = pl
+            continue
+
+        if side_scorer == current_side:
+            # Scoring by the same side as the window
+            points_for += pts
+        else:
+            # Opponent scores within the window
+            points_against += pts
+
+        # If still within opposition tolerance, update best if it qualifies
+        if points_against <= max_against and points_for >= min_for:
+            if points_for - points_against > best_for - best_against:
+                best_for = points_for
+                best_against = points_against
+                best_end_play = pl
+
+        # If opponent has scored too much, close this window (using best),
+        # and start a new one for the opponent from this play
+        if points_against > max_against:
+            flush_best()
+            # New window from opponent perspective
+            current_side = side_scorer
+            current_team_id = team_id
+            start_play = pl
+            points_for = pts
+            points_against = 0
+            if points_for >= min_for and points_against <= max_against:
+                best_for = points_for
+                best_against = points_against
+                best_end_play = pl
+
+    # Tail: flush any best we have at the end of the game
+    flush_best()
+
+    return runs
+
+
 def run_analysis(game_id: Optional[str] = None) -> None:
     logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
@@ -372,6 +500,11 @@ def run_analysis(game_id: Optional[str] = None) -> None:
     # 8+ net runs (big swings, both teams)
     net_runs = compute_net_runs(plays_seq, team_id_to_side, min_margin=8)
 
+    # highlight runs: points_for >= 8, points_against <= 5, both teams
+    highlight_runs = compute_highlight_runs(
+        plays_seq, team_id_to_side, min_for=8, max_against=5
+    )
+
     # basic meta
     season = summary.get("header", {}).get("season", {}).get("year")
     date_iso = comp.get("date", "")
@@ -382,12 +515,13 @@ def run_analysis(game_id: Optional[str] = None) -> None:
 
     out = {
         "game_id": game_id,
-            "date": game_date,
+        "date": game_date,
         "season": season,
         "teams": teams_by_side,
         "quarter_team_points": q_points,
         "unanswered_runs": unanswered_runs,
         "net_runs": net_runs,
+        "highlight_runs": highlight_runs,
     }
 
     out_path = out_dir / f"analysis_{game_id}.json"
@@ -399,7 +533,10 @@ def run_analysis(game_id: Optional[str] = None) -> None:
 
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Lab script: compute quarter team points + 7+ unanswered runs + 8+ net runs"
+        description=(
+            "Lab script: compute quarter team points + 7+ unanswered runs "
+            "+ 8+ net runs + highlight runs (>=8 pts, <=5 allowed)"
+        )
     )
     parser.add_argument(
         "--game-id",
