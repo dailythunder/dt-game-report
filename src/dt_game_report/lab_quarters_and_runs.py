@@ -214,7 +214,6 @@ def compute_unanswered_runs(
         team_id = pl.get("team_id")
         side = team_id_to_side.get(team_id) if team_id else None
         if side not in ("home", "away"):
-            # unknown side? just flush any pending run
             flush_run(pl)
             continue
         pts = int(pl.get("score_value") or 0)
@@ -237,6 +236,108 @@ def compute_unanswered_runs(
     # tail
     if plays_seq:
         flush_run(plays_seq[-1])
+
+    return runs
+
+
+def compute_net_runs(
+    plays_seq: List[Dict[str, Any]], team_id_to_side: Dict[str, str], min_margin: int = 7
+) -> List[Dict[str, Any]]:
+    """
+    Compute 7+ point net runs by either team.
+
+    A net run is a contiguous stretch of plays where one team
+    builds a net scoring margin of at least `min_margin` from the
+    start of that stretch, and the run ends when the opponent
+    fully erases the lead (net <= 0 from that side's perspective).
+
+    We use the scoreboard margin for stability:
+      margin = home_score - away_score
+      home perspective = margin
+      away perspective = -margin
+    """
+    runs: List[Dict[str, Any]] = []
+
+    current_side: Optional[str] = None  # 'home' or 'away'
+    current_team_id: Optional[str] = None
+    start_play: Optional[Dict[str, Any]] = None
+    start_margin_side: Optional[int] = None  # margin from this side's perspective
+    current_net: int = 0
+    last_scoring_play: Optional[Dict[str, Any]] = None
+
+    def margin_for_side(pl: Dict[str, Any], side: str) -> int:
+        margin = int(pl.get("home_score", 0)) - int(pl.get("away_score", 0))
+        return margin if side == "home" else -margin
+
+    def flush_run(final_play: Optional[Dict[str, Any]]) -> None:
+        nonlocal current_side, current_team_id, start_play, start_margin_side, current_net
+        if current_side and start_play and final_play and current_net >= min_margin:
+            runs.append(
+                {
+                    "side": current_side,
+                    "team_id": current_team_id,
+                    "net_points": current_net,
+                    "start_index": start_play["index"],
+                    "end_index": final_play["index"],
+                    "start_period": start_play.get("period"),
+                    "start_clock": start_play.get("clock"),
+                    "end_period": final_play.get("period"),
+                    "end_clock": final_play.get("clock"),
+                }
+            )
+        current_side = None
+        current_team_id = None
+        start_play = None
+        start_margin_side = None
+        current_net = 0
+
+    for pl in plays_seq:
+        if not pl.get("scoring_play"):
+            continue
+
+        last_scoring_play = pl
+
+        team_id = pl.get("team_id")
+        side_scorer = team_id_to_side.get(team_id) if team_id else None
+        if side_scorer not in ("home", "away"):
+            # if we don't know who scored, just end any current run
+            flush_run(pl)
+            continue
+
+        if current_side is None:
+            # start a new potential run from this scoring play
+            current_side = side_scorer
+            current_team_id = team_id
+            start_play = pl
+            start_margin_side = margin_for_side(pl, current_side)
+            current_net = 0
+            continue
+
+        # We have an ongoing run
+        # Compute margin from the perspective of the current run owner
+        cur_margin_side = margin_for_side(pl, current_side)
+        net_change = cur_margin_side - (start_margin_side or 0)
+
+        if side_scorer == current_side:
+            # Same side scoring, net change should increase or stay
+            current_net = net_change
+        else:
+            # Opponent scored; see if they have fully erased the lead
+            if net_change < 0:
+                # run is broken; flush if big enough, then start new run for opponent
+                flush_run(pl)
+                current_side = side_scorer
+                current_team_id = team_id
+                start_play = pl
+                start_margin_side = margin_for_side(pl, current_side)
+                current_net = 0
+            else:
+                # Opponent scored but hasn't fully erased lead; we keep run alive
+                current_net = net_change
+
+    # tail flush
+    if last_scoring_play is not None:
+        flush_run(last_scoring_play)
 
     return runs
 
@@ -264,7 +365,12 @@ def run_analysis(game_id: Optional[str] = None) -> None:
     q_points = compute_quarter_team_points(plays_seq, team_id_to_side)
 
     # 7+ unanswered runs
-    runs = compute_unanswered_runs(plays_seq, team_id_to_side, min_points=7)
+    unanswered_runs = compute_unanswered_runs(
+        plays_seq, team_id_to_side, min_points=7
+    )
+
+    # 7+ net runs
+    net_runs = compute_net_runs(plays_seq, team_id_to_side, min_margin=7)
 
     # basic meta
     season = summary.get("header", {}).get("season", {}).get("year")
@@ -280,7 +386,8 @@ def run_analysis(game_id: Optional[str] = None) -> None:
         "season": season,
         "teams": teams_by_side,
         "quarter_team_points": q_points,
-        "unanswered_runs": runs,
+        "unanswered_runs": unanswered_runs,
+        "net_runs": net_runs,
     }
 
     out_path = out_dir / f"analysis_{game_id}.json"
@@ -292,7 +399,7 @@ def run_analysis(game_id: Optional[str] = None) -> None:
 
 def main(argv: Optional[List[str]] = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Lab script: compute quarter team points + 7+ unanswered runs"
+        description="Lab script: compute quarter team points + 7+ runs (unanswered + net)"
     )
     parser.add_argument(
         "--game-id",
