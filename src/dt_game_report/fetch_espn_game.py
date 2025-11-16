@@ -1,34 +1,32 @@
-
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 import requests
 
-
-# Default ESPN event ID for testing.
-# You can change this to any valid NBA gameId, e.g. "401810077".
+# Use your current test game
 ESPN_EVENT_ID = "401810077"
 
 
-@dataclass
-class TeamSide:
-    abbrev: str
-    full_name: str
-    home_away: str  # "home" or "away"
-
-
 def get_repo_root() -> Path:
-    """Resolve the repo root based on this file's location."""
+    """
+    Resolve the repo root based on this file's location.
+
+    Expected layout:
+      repo_root/
+        src/dt_game_report/fetch_espn_game.py
+        fixtures/
+    """
     return Path(__file__).resolve().parents[2]
 
 
 def fetch_espn_summary(event_id: str) -> Dict[str, Any]:
-    """Fetch ESPN NBA game summary JSON for a given event ID."""
+    """
+    Fetch ESPN NBA game summary JSON for a given event ID.
+    """
     base_url = "https://site.api.espn.com/apis/site/v2/sports/basketball/nba/summary"
     params = {"event": event_id}
     print(f"[Fetch ESPN] Requesting summary for event {event_id} ...")
@@ -47,28 +45,19 @@ def _extract_competition(summary: Dict[str, Any]) -> Dict[str, Any]:
     return comps[0]
 
 
-def _extract_team_sides(competition: Dict[str, Any]) -> Dict[str, TeamSide]:
-    """Return mapping 'home'/'away' -> TeamSide."""
+def _extract_team_side(competition: Dict[str, Any]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
     competitors = competition.get("competitors") or []
     if len(competitors) != 2:
         raise ValueError("Expected exactly 2 competitors in ESPN summary.")
-
-    sides: Dict[str, TeamSide] = {}
-    for comp_team in competitors:
-        team = comp_team.get("team") or {}
-        abbrev = (team.get("abbreviation") or "").upper()
-        full_name = team.get("displayName") or team.get("name") or ""
-        ha = comp_team.get("homeAway")
-        if ha not in ("home", "away"):
-            continue
-        sides[ha] = TeamSide(abbrev=abbrev, full_name=full_name, home_away=ha)
-
-    if "home" not in sides or "away" not in sides:
-        raise ValueError("Could not find both home and away teams.")
-    return sides
+    home = next(c for c in competitors if c.get("homeAway") == "home")
+    away = next(c for c in competitors if c.get("homeAway") == "away")
+    return home, away
 
 
 def _parse_meta(summary: Dict[str, Any], comp: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Build the meta dict for the DT schema from ESPN summary.
+    """
     game_id = comp.get("id") or summary.get("header", {}).get("id")
     date_str = comp.get("date")
     if date_str:
@@ -115,20 +104,34 @@ def _parse_meta(summary: Dict[str, Any], comp: Dict[str, Any]) -> Dict[str, Any]
     }
 
 
+def _parse_teams(home: Dict[str, Any], away: Dict[str, Any]) -> Dict[str, Any]:
+    def team_info(comp_entry: Dict[str, Any]) -> Dict[str, str]:
+        t = comp_entry.get("team") or {}
+        return {
+            "tricode": t.get("abbreviation") or "",
+            "full_name": t.get("displayName") or t.get("name") or "",
+            "logo_url": (t.get("logos") or [{}])[0].get("href") or "",
+        }
+
+    return {
+        "home": team_info(home),
+        "away": team_info(away),
+    }
+
+
 def _parse_linescores(competition: Dict[str, Any]) -> List[Dict[str, Any]]:
-    """Extract per-quarter scoring from competition.competitors[].linescores."""
+    """
+    Extract per-quarter scoring.
+
+    Returns a list of quarters:
+      [{ "number": 1, "home_score": 30, "away_score": 25 }, ...]
+    """
     competitors = competition.get("competitors") or []
     if len(competitors) != 2:
         return []
 
-    def _by_side(target: str) -> Dict[str, Any]:
-        for c in competitors:
-            if c.get("homeAway") == target:
-                return c
-        return {}
-
-    home = _by_side("home")
-    away = _by_side("away")
+    home = next(c for c in competitors if c.get("homeAway") == "home")
+    away = next(c for c in competitors if c.get("homeAway") == "away")
 
     home_lines = home.get("linescores") or []
     away_lines = away.get("linescores") or []
@@ -137,7 +140,6 @@ def _parse_linescores(competition: Dict[str, Any]) -> List[Dict[str, Any]]:
     num_periods = max(len(home_lines), len(away_lines))
 
     for idx in range(num_periods):
-        q_num = idx + 1
         home_q = home_lines[idx] if idx < len(home_lines) else {}
         away_q = away_lines[idx] if idx < len(away_lines) else {}
 
@@ -150,7 +152,7 @@ def _parse_linescores(competition: Dict[str, Any]) -> List[Dict[str, Any]]:
 
         quarters.append(
             {
-                "number": q_num,
+                "number": idx + 1,
                 "home_score": _score(home_q),
                 "away_score": _score(away_q),
             }
@@ -173,405 +175,230 @@ def _split_makes_attempts(val: Optional[str]) -> Tuple[int, int]:
         return 0, 0
 
 
-def _parse_team_totals(summary: Dict[str, Any], sides: Dict[str, TeamSide]) -> Tuple[Dict[str, Any], Dict[str, Any]]:
-    """Return (traditional_totals, misc_totals) keyed by 'home'/'away'."""
+def _parse_team_totals(summary: Dict[str, Any]) -> Dict[str, Dict[str, Any]]:
+    """
+    Parse team totals (traditional + misc) from ESPN boxscore. Returns dict:
+      {
+        "HOME_ABBR": {...stats...},
+        "AWAY_ABBR": {...stats...},
+      }
+    """
     box = summary.get("boxscore") or {}
     teams_stats = box.get("teams") or []
 
-    traditional = {"home": {}, "away": {}}
-    misc = {
-        "home": {"pitp": 0.0, "second_chance": 0.0, "fast_break": 0.0, "points_off_to": 0.0},
-        "away": {"pitp": 0.0, "second_chance": 0.0, "fast_break": 0.0, "points_off_to": 0.0},
-    }
-    largest_lead = {"home": 0, "away": 0}
+    results: Dict[str, Dict[str, Any]] = {}
 
-    def side_key_from_abbrev(abbrev: str) -> Optional[str]:
-        for key, ts in sides.items():
-            if ts.abbrev.upper() == abbrev.upper():
-                return key
-        return None
+    for team_entry in teams_stats:
+        team_info = team_entry.get("team") or {}
+        abbrev = (team_info.get("abbreviation") or "").upper()
+        stats = team_entry.get("statistics") or []
+        out: Dict[str, Any] = {}
 
-    for t in teams_stats:
-        team = t.get("team") or {}
-        abbrev = (team.get("abbreviation") or "").upper()
-        side = side_key_from_abbrev(abbrev)
-        if side is None:
-            continue
-
-        stats_list = t.get("statistics") or []
-
-        row_trad: Dict[str, Any] = {}
-        row_misc = misc[side]
-
-        fg_m = fg_a = fg3_m = fg3_a = ft_m = ft_a = 0
-        trb = ast = stl = blk = tov = pf = pts = 0
-        pitp = second_chance = fast_break = points_off_to = 0
-        ll = 0
-
-        for s in stats_list:
-            name = s.get("name")
+        for s in stats:
+            name = (s.get("name") or "").lower()
             val = s.get("displayValue")
 
-            def as_int(x: Optional[str]) -> int:
-                try:
-                    return int(x)
-                except Exception:
-                    return 0
-
-            if name == "fieldGoalsMade-fieldGoalsAttempted":
+            # These names are based on the JSON you uploaded
+            if name in ("fieldgoalsmade-fieldgoalsattempted", "fieldgoals"):
                 fg_m, fg_a = _split_makes_attempts(val)
-            elif name == "threePointFieldGoalsMade-threePointFieldGoalsAttempted":
+                out["fg"] = fg_m
+                out["fga"] = fg_a
+            elif name in ("threepointfieldgoalsmade-threepointfieldgoalsattempted", "threepointfieldgoals"):
                 fg3_m, fg3_a = _split_makes_attempts(val)
-            elif name == "freeThrowsMade-freeThrowsAttempted":
+                out["fg3"] = fg3_m
+                out["fg3a"] = fg3_a
+            elif name in ("freethrowsmade-freethrowsattempted", "freethrows"):
                 ft_m, ft_a = _split_makes_attempts(val)
-            elif name in ("totalRebounds", "rebounds"):
-                trb = as_int(val)
+                out["ft"] = ft_m
+                out["fta"] = ft_a
+            elif name in ("totalrebounds", "rebounds"):
+                try:
+                    out["trb"] = int(val)
+                except Exception:
+                    out["trb"] = 0
             elif name == "assists":
-                ast = as_int(val)
+                try:
+                    out["ast"] = int(val)
+                except Exception:
+                    out["ast"] = 0
             elif name == "steals":
-                stl = as_int(val)
+                try:
+                    out["stl"] = int(val)
+                except Exception:
+                    out["stl"] = 0
             elif name == "blocks":
-                blk = as_int(val)
-            elif name in ("turnovers", "totalTurnovers"):
-                tov = as_int(val)
+                try:
+                    out["blk"] = int(val)
+                except Exception:
+                    out["blk"] = 0
+            elif name == "turnovers":
+                try:
+                    out["tov"] = int(val)
+                except Exception:
+                    out["tov"] = 0
+            elif name in ("fouls", "personalfouls"):
+                try:
+                    out["pf"] = int(val)
+                except Exception:
+                    out["pf"] = 0
             elif name == "points":
-                pts = as_int(val)
-            elif name == "fouls":
-                pf = as_int(val)
-            elif name == "pointsInPaint":
-                pitp = as_int(val)
-            elif name == "secondChancePoints":
-                second_chance = as_int(val)
-            elif name == "fastBreakPoints":
-                fast_break = as_int(val)
-            elif name == "turnoverPoints":
-                # ESPN stores "points conceded off turnovers". For our purposes
-                # treat this as opponent points off turnovers; here we keep it
-                # as this team's points off turnovers for simplicity.
-                points_off_to = as_int(val)
-            elif name == "largestLead":
-                ll = as_int(val)
+                try:
+                    out["pts"] = int(val)
+                except Exception:
+                    out["pts"] = 0
+            elif name == "pointsinthepaint":
+                try:
+                    out["pitp"] = int(val)
+                except Exception:
+                    out["pitp"] = 0
+            elif name == "secondchancepoints":
+                try:
+                    out["second_chance"] = int(val)
+                except Exception:
+                    out["second_chance"] = 0
+            elif name == "fastbreakpoints":
+                try:
+                    out["fast_break"] = int(val)
+                except Exception:
+                    out["fast_break"] = 0
+            elif name == "pointsoffturnovers":
+                try:
+                    out["points_off_to"] = int(val)
+                except Exception:
+                    out["points_off_to"] = 0
+            elif name == "largestlead":
+                try:
+                    out["largest_lead"] = int(val)
+                except Exception:
+                    out["largest_lead"] = 0
 
-        # Percentages
-        fg_pct = round(fg_m / fg_a * 100, 1) if fg_a else 0.0
-        fg3_pct = round(fg3_m / fg3_a * 100, 1) if fg3_a else 0.0
-        ft_pct = round(ft_m / ft_a * 100, 1) if ft_a else 0.0
+        results[abbrev] = out
 
-        row_trad.update(
-            {
-                "fg": fg_m,
-                "fga": fg_a,
-                "fg_pct": fg_pct,
-                "fg3": fg3_m,
-                "fg3a": fg3_a,
-                "fg3_pct": fg3_pct,
-                "ft": ft_m,
-                "fta": ft_a,
-                "ft_pct": ft_pct,
-                "trb": trb,
-                "ast": ast,
-                "stl": stl,
-                "blk": blk,
-                "tov": tov,
-                "pf": pf,
-                "pts": pts,
-            }
-        )
-
-        traditional[side] = row_trad
-        misc[side] = {
-            "pitp": float(pitp),
-            "second_chance": float(second_chance),
-            "fast_break": float(fast_break),
-            "points_off_to": float(points_off_to),
-        }
-        largest_lead[side] = ll
-
-    return traditional, misc, largest_lead
+    return results
 
 
-def _parse_players(summary: Dict[str, Any], sides: Dict[str, TeamSide]) -> Dict[str, List[Dict[str, Any]]]:
-    """Parse player box score lines from ESPN format into flat dicts."""
-    box = summary.get("boxscore") or {}
-    players_stats = box.get("players") or []
-
-    players: Dict[str, List[Dict[str, Any]]] = {"home": [], "away": []}
-
-    def side_key_from_abbrev(abbrev: str) -> Optional[str]:
-        for key, ts in sides.items():
-            if ts.abbrev.upper() == abbrev.upper():
-                return key
-        return None
-
-    for team_block in players_stats:
-        team = team_block.get("team") or {}
-        abbrev = (team.get("abbreviation") or "").upper()
-        side = side_key_from_abbrev(abbrev)
-        if side is None:
-            continue
-
-        stat_groups = team_block.get("statistics") or []
-        if not stat_groups:
-            continue
-        group = stat_groups[0]
-
-        keys = group.get("keys") or []
-        athletes = group.get("athletes") or []
-
-        for a in athletes:
-            athlete = a.get("athlete") or {}
-            stats = a.get("stats") or []
-            if not stats or len(stats) != len(keys):
-                continue
-
-            row: Dict[str, Any] = {}
-            name = athlete.get("displayName") or ""
-            pos = ""
-            pos_obj = athlete.get("position") or {}
-            if isinstance(pos_obj, dict):
-                pos = pos_obj.get("abbreviation") or ""
-
-            row["name"] = name
-            row["position"] = pos
-            row["starter"] = bool(a.get("starter", False))
-
-            fg_m = fg_a = fg3_m = fg3_a = ft_m = ft_a = 0
-            trb = ast = stl = blk = tov = pf = pts = 0
-            minutes = ""
-
-            for key, val in zip(keys, stats):
-                def as_int(x: Optional[str]) -> int:
-                    try:
-                        return int(x)
-                    except Exception:
-                        return 0
-
-                if key == "fieldGoalsMade-fieldGoalsAttempted":
-                    fg_m, fg_a = _split_makes_attempts(val)
-                elif key == "threePointFieldGoalsMade-threePointFieldGoalsAttempted":
-                    fg3_m, fg3_a = _split_makes_attempts(val)
-                elif key == "freeThrowsMade-freeThrowsAttempted":
-                    ft_m, ft_a = _split_makes_attempts(val)
-                elif key in ("rebounds",):
-                    trb = as_int(val)
-                elif key == "assists":
-                    ast = as_int(val)
-                elif key == "steals":
-                    stl = as_int(val)
-                elif key == "blocks":
-                    blk = as_int(val)
-                elif key == "turnovers":
-                    tov = as_int(val)
-                elif key == "fouls":
-                    pf = as_int(val)
-                elif key == "points":
-                    pts = as_int(val)
-                elif key == "minutes":
-                    minutes = val or ""
-
-            fg_pct = round(fg_m / fg_a * 100, 1) if fg_a else 0.0
-            fg3_pct = round(fg3_m / fg3_a * 100, 1) if fg3_a else 0.0
-            ft_pct = round(ft_m / ft_a * 100, 1) if ft_a else 0.0
-
-            row.update(
-                {
-                    "min": minutes,
-                    "fg": fg_m,
-                    "fga": fg_a,
-                    "fg_pct": fg_pct,
-                    "fg3": fg3_m,
-                    "fg3a": fg3_a,
-                    "fg3_pct": fg3_pct,
-                    "ft": ft_m,
-                    "fta": ft_a,
-                    "ft_pct": ft_pct,
-                    "trb": trb,
-                    "ast": ast,
-                    "stl": stl,
-                    "blk": blk,
-                    "tov": tov,
-                    "pf": pf,
-                    "pts": pts,
-                }
-            )
-
-            players[side].append(row)
-
-    return players
-
-
-def _compute_leaders(players: Dict[str, List[Dict[str, Any]]]) -> Dict[str, Any]:
-    def leaders_for_side(side_players: List[Dict[str, Any]]) -> Dict[str, Any]:
-        if not side_players:
-            return {
-                "points": {"value": 0, "players": []},
-                "rebounds": {"value": 0, "players": []},
-                "assists": {"value": 0, "players": []},
-                "blocks": {"value": 0, "players": []},
-                "steals": {"value": 0, "players": []},
-            }
-
-        def max_stat(stat_key: str) -> Tuple[int, List[str]]:
-            max_val = -1
-            names: List[str] = []
-            for p in side_players:
-                val = int(p.get(stat_key, 0))
-                if val > max_val:
-                    max_val = val
-                    names = [p.get("name", "")]
-                elif val == max_val and val > 0:
-                    names.append(p.get("name", ""))
-            if max_val < 0:
-                max_val = 0
-            return max_val, names
-
-        pts_val, pts_names = max_stat("pts")
-        reb_val, reb_names = max_stat("trb")
-        ast_val, ast_names = max_stat("ast")
-        blk_val, blk_names = max_stat("blk")
-        stl_val, stl_names = max_stat("stl")
-
-        return {
-            "points": {"value": pts_val, "players": pts_names},
-            "rebounds": {"value": reb_val, "players": reb_names},
-            "assists": {"value": ast_val, "players": ast_names},
-            "blocks": {"value": blk_val, "players": blk_names},
-            "steals": {"value": stl_val, "players": stl_names},
-        }
-
-    return {
-        "home": leaders_for_side(players.get("home", [])),
-        "away": leaders_for_side(players.get("away", [])),
-    }
-
-
-def build_dt_schema_from_espn(summary: Dict[str, Any], event_id: str) -> Dict[str, Any]:
+def build_dt_schema_from_espn(summary: Dict[str, Any], base: Dict[str, Any]) -> Dict[str, Any]:
+    """
+    Convert ESPN summary JSON into the DT Game Report JSON schema,
+    aligning with the structure of example_game.json.
+    """
     comp = _extract_competition(summary)
-    sides = _extract_team_sides(comp)
+    home_comp, away_comp = _extract_team_side(comp)
 
     meta = _parse_meta(summary, comp)
+    teams = _parse_teams(home_comp, away_comp)
     quarters_basic = _parse_linescores(comp)
-    team_trad, misc_totals, largest_lead = _parse_team_totals(summary, sides)
-    players = _parse_players(summary, sides)
-    leaders = _compute_leaders(players)
 
-    # Teams block
-    teams = {
-        "home": {
-            "tricode": sides["home"].abbrev,
-            "full_name": sides["home"].full_name,
-        },
-        "away": {
-            "tricode": sides["away"].abbrev,
-            "full_name": sides["away"].full_name,
-        },
-    }
+    team_totals_by_abbrev = _parse_team_totals(summary)
+    home_abbrev = teams["home"]["tricode"]
+    away_abbrev = teams["away"]["tricode"]
 
-    # Game totals block
-    game_totals = {
-        "traditional": team_trad,
-        "advanced": {
-            "home": {
-                "off_rating": 0.0,
-                "def_rating": 0.0,
-                "net_rating": 0.0,
-                "efg_pct": 0.0,
-                "ts_pct": 0.0,
-                "pace": 0.0,
-            },
-            "away": {
-                "off_rating": 0.0,
-                "def_rating": 0.0,
-                "net_rating": 0.0,
-                "efg_pct": 0.0,
-                "ts_pct": 0.0,
-                "pace": 0.0,
-            },
-        },
-        "misc": misc_totals,
-    }
+    # Start from the base example structure
+    data = base
 
-    # Quarters block: scores only for now
-    quarters: List[Dict[str, Any]] = []
-    for q in quarters_basic:
-        quarters.append(
-            {
-                "number": q["number"],
-                "home_score": q["home_score"],
-                "away_score": q["away_score"],
-                "team_totals": {
-                    "traditional": {
-                        "home": {
-                            "fg": 0,
-                            "fga": 0,
-                            "fg3": 0,
-                            "fg3a": 0,
-                            "ft": 0,
-                            "fta": 0,
-                            "trb": 0,
-                            "ast": 0,
-                            "stl": 0,
-                            "blk": 0,
-                            "tov": 0,
-                            "pts": q["home_score"],
-                        },
-                        "away": {
-                            "fg": 0,
-                            "fga": 0,
-                            "fg3": 0,
-                            "fg3a": 0,
-                            "ft": 0,
-                            "fta": 0,
-                            "trb": 0,
-                            "ast": 0,
-                            "stl": 0,
-                            "blk": 0,
-                            "tov": 0,
-                            "pts": q["away_score"],
-                        },
-                    },
-                    "advanced": {
-                        "home": {
-                            "off_rating": 0.0,
-                            "def_rating": 0.0,
-                            "net_rating": 0.0,
-                            "efg_pct": 0.0,
-                            "ts_pct": 0.0,
-                        },
-                        "away": {
-                            "off_rating": 0.0,
-                            "def_rating": 0.0,
-                            "net_rating": 0.0,
-                            "efg_pct": 0.0,
-                            "ts_pct": 0.0,
-                        },
-                    },
-                },
-                "players": {
-                    "home": [],
-                    "away": [],
-                },
-            }
-        )
+    # Meta
+    data.setdefault("meta", {})
+    data["meta"].update(meta)
 
-    files = {"play_by_play_csv": "play_by_play.csv"}
+    # Teams
+    data.setdefault("teams", {"home": {}, "away": {}})
+    data["teams"]["home"].update(teams["home"])
+    data["teams"]["away"].update(teams["away"])
 
-    dt_data: Dict[str, Any] = {
-        "meta": meta,
-        "teams": teams,
-        "largest_lead": largest_lead,
-        "game_totals": game_totals,
-        "players": players,
-        "quarters": quarters,
-        "leaders": leaders,
-        "files": files,
-        "source": {
-            "provider": "ESPN",
-            "event_id": event_id,
-        },
-    }
+    # Ensure game_totals.traditional exists
+    data.setdefault("game_totals", {})
+    data["game_totals"].setdefault("traditional", {})
+    data["game_totals"]["traditional"].setdefault("home", {})
+    data["game_totals"]["traditional"].setdefault("away", {})
 
-    return dt_data
+    # Also ensure misc + largest_lead exist
+    data["game_totals"].setdefault("misc", {"home": {}, "away": {}})
+    data.setdefault("largest_lead", {"home": 0, "away": 0})
+
+    def fill_side(side_key: str, abbrev: str) -> None:
+        side_stats = team_totals_by_abbrev.get(abbrev.upper(), {})
+        base_side = data["game_totals"]["traditional"].get(side_key, {})
+
+        fg = side_stats.get("fg", 0)
+        fga = side_stats.get("fga", 0)
+        fg3 = side_stats.get("fg3", 0)
+        fg3a = side_stats.get("fg3a", 0)
+        ft = side_stats.get("ft", 0)
+        fta = side_stats.get("fta", 0)
+
+        def pct(made: int, att: int) -> float:
+            return round(made / att * 100, 1) if att else 0.0
+
+        new_side: Dict[str, Any] = dict(base_side)
+        # Core counting stats
+        new_side["fg"] = fg
+        new_side["fga"] = fga
+        new_side["fg3"] = fg3
+        new_side["fg3a"] = fg3a
+        new_side["ft"] = ft
+        new_side["fta"] = fta
+        new_side["trb"] = side_stats.get("trb", 0)
+        new_side["ast"] = side_stats.get("ast", 0)
+        new_side["stl"] = side_stats.get("stl", 0)
+        new_side["blk"] = side_stats.get("blk", 0)
+        new_side["tov"] = side_stats.get("tov", 0)
+        new_side["pf"] = side_stats.get("pf", 0)
+        new_side["pts"] = side_stats.get("pts", 0)
+
+        # Percentages, using whatever names exist in base
+        for key in base_side.keys():
+            if key.lower() in ("fg_pct", "fgp"):
+                new_side[key] = pct(fg, fga)
+            elif key.lower() in ("fg3_pct", "tp_pct", "three_pct"):
+                new_side[key] = pct(fg3, fg3a)
+            elif key.lower() in ("ft_pct", "ftp"):
+                new_side[key] = pct(ft, fta)
+
+        data["game_totals"]["traditional"][side_key] = new_side
+
+        # Misc stats
+        misc = data["game_totals"].setdefault("misc", {"home": {}, "away": {}})
+        misc_side = misc.setdefault(side_key, {})
+        misc_side["pitp"] = side_stats.get("pitp", 0)
+        misc_side["second_chance"] = side_stats.get("second_chance", 0)
+        misc_side["fast_break"] = side_stats.get("fast_break", 0)
+        misc_side["points_off_to"] = side_stats.get("points_off_to", 0)
+
+        # Largest lead
+        if side_stats.get("largest_lead") is not None:
+            try:
+                data["largest_lead"][side_key] = int(side_stats["largest_lead"])
+            except Exception:
+                pass
+
+    # Fill home/away team totals
+    fill_side("home", home_abbrev)
+    fill_side("away", away_abbrev)
+
+    # Quarters: update scores only, keep structure from base
+    base_quarters = data.get("quarters", [])
+    for i, q in enumerate(quarters_basic):
+        if i < len(base_quarters):
+            base_quarters[i]["number"] = q["number"]
+            base_quarters[i]["home_score"] = q["home_score"]
+            base_quarters[i]["away_score"] = q["away_score"]
+        else:
+            base_quarters.append(
+                {
+                    "number": q["number"],
+                    "home_score": q["home_score"],
+                    "away_score": q["away_score"],
+                    "team_totals": base_quarters[0].get("team_totals", {}) if base_quarters else {},
+                    "players": base_quarters[0].get("players", {}) if base_quarters else {},
+                }
+            )
+    data["quarters"] = base_quarters
+
+    # Ensure files block exists for PBP CSV pointer
+    data.setdefault("files", {})
+    data["files"].setdefault("play_by_play_csv", "play_by_play.csv")
+
+    return data
 
 
 def save_dt_game_json(data: Dict[str, Any], fixtures_dir: Path, event_id: str) -> Path:
@@ -591,8 +418,15 @@ def main() -> None:
     print(f"[Fetch ESPN] Fixtures dir: {fixtures_dir}")
     print(f"[Fetch ESPN] Using ESPN event id: {ESPN_EVENT_ID}")
 
+    example_path = fixtures_dir / "example_game.json"
+    if not example_path.exists():
+        raise FileNotFoundError(f"Could not find base fixture at {example_path}")
+    print(f"[Fetch ESPN] Loading base fixture from: {example_path}")
+    with example_path.open("r", encoding="utf-8") as f:
+        base = json.load(f)
+
     summary = fetch_espn_summary(ESPN_EVENT_ID)
-    dt_data = build_dt_schema_from_espn(summary, ESPN_EVENT_ID)
+    dt_data = build_dt_schema_from_espn(summary, base)
     out_path = save_dt_game_json(dt_data, fixtures_dir, ESPN_EVENT_ID)
 
     print("[Fetch ESPN] Done.")
