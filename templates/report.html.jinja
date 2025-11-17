@@ -142,6 +142,25 @@
       table-layout: fixed;
     }
 
+    /* Box score tables: allow horizontal scroll instead of squishing */
+    .player-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 4px;
+    }
+
+    table.player-table {
+      width: max-content;
+      table-layout: auto;
+      font-size: 13px;
+    }
+
+    table.player-table th,
+    table.player-table td {
+      white-space: nowrap;
+    }
+
     th, td {
       padding: 4px 6px;
       text-align: right;
@@ -390,7 +409,8 @@
                   <li>
                     {{ team.tricode }}:
                     {{ r.points }}-0 run
-                    (Q{{ r.start_period }} {{ r.start_clock }} → Q{{ r.end_period }} {{ r.end_clock }})
+                    (Q{{ r.start_period }} {{ r.start_clock }} → Q{{ r.end_period }} {{ r.end_clock }};
+                     score {{ data.teams.away.tricode }} {{ r.end_away_score }} – {{ r.end_home_score }} {{ data.teams.home.tricode }})
                   </li>
                 {% endfor %}
               {% else %}
@@ -415,7 +435,8 @@
                   <li>
                     {{ team.tricode }}:
                     +{{ r.net_points }} net
-                    (Q{{ r.start_period }} {{ r.start_clock }} → Q{{ r.end_period }} {{ r.end_clock }})
+                    (Q{{ r.start_period }} {{ r.start_clock }} → Q{{ r.end_period }} {{ r.end_clock }};
+                     score {{ data.teams.away.tricode }} {{ r.end_away_score }} – {{ r.end_home_score }} {{ data.teams.home.tricode }})
                   </li>
                 {% endfor %}
               {% else %}
@@ -442,6 +463,7 @@
                     {{ r.points_for }}–{{ r.points_against }}
                     (net {{ r.net_points }})
                     – Q{{ r.start_period }} {{ r.start_clock }} → Q{{ r.end_period }} {{ r.end_clock }}
+                    (score {{ data.teams.away.tricode }} {{ r.end_away_score }} – {{ r.end_home_score }} {{ data.teams.home.tricode }})
                   </li>
                 {% endfor %}
               {% else %}
@@ -613,7 +635,8 @@
           {% set team = data.teams[side] %}
           {% set players = data.players[side] %}
           <h3>{{ team.full_name }} ({{ team.tricode }})</h3>
-          <table class="player-table">
+          <div class="player-table-wrapper">
+            <table class="player-table">
             <colgroup>
               <col class="col-player">
               <col class="col-min">
@@ -730,6 +753,7 @@
               </tr>
             </tbody>
           </table>
+          </div>
         {% endfor %}
       </section>
 
@@ -765,7 +789,8 @@
                   <div class="quarter-team-label">
                     {{ team.full_name }} ({{ team.tricode }}) – Players (Q{{ qnum }})
                   </div>
-                  <table class="player-table">
+                  <div class="player-table-wrapper">
+                    <table class="player-table">
                     <colgroup>
                       <col class="col-player">
                       <col class="col-stat">
@@ -841,6 +866,7 @@
                       </tr>
                     </tbody>
                   </table>
+                  </div>
                 </div>
               {% endfor %}
             </div>
