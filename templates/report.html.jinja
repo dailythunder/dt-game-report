@@ -319,7 +319,6 @@
     <div class="pill-row">
       <div class="pill">{{ data.teams.away.full_name }} (Away)</div>
       <div class="pill">{{ data.teams.home.full_name }} (Home)</div>
-      <div class="pill">Season {{ data.meta.season }}</div>
     </div>
 
     <main class="layout">
@@ -470,6 +469,8 @@
               <th>3P</th>
               <th>FT</th>
               <th>REB</th>
+              <th>OREB</th>
+              <th>DREB</th>
               <th>AST</th>
               <th>STL</th>
               <th>BLK</th>
@@ -482,10 +483,12 @@
             <!-- Away first, home second -->
             <tr>
               <td class="team-name-cell">{{ data.teams.away.tricode }}</td>
-              <td>{{ away_trad.fg }}/{{ away_trad.fga }}</td>
-              <td>{{ away_trad.fg3 }}/{{ away_trad.fg3a }}</td>
-              <td>{{ away_trad.ft }}/{{ away_trad.fta }}</td>
+              <td>{{ away_trad.fg }}/{{ away_trad.fga }}{% if away_trad.fga %} ({{ (away_trad.fg * 100.0 / away_trad.fga)|round(1) }}%){% endif %}</td>
+              <td>{{ away_trad.fg3 }}/{{ away_trad.fg3a }}{% if away_trad.fg3a %} ({{ (away_trad.fg3 * 100.0 / away_trad.fg3a)|round(1) }}%){% endif %}</td>
+              <td>{{ away_trad.ft }}/{{ away_trad.fta }}{% if away_trad.fta %} ({{ (away_trad.ft * 100.0 / away_trad.fta)|round(1) }}%){% endif %}</td>
               <td>{{ away_trad.trb }}</td>
+              <td>{{ away_trad.orb }}</td>
+              <td>{{ away_trad.drb }}</td>
               <td>{{ away_trad.ast }}</td>
               <td>{{ away_trad.stl }}</td>
               <td>{{ away_trad.blk }}</td>
@@ -495,10 +498,12 @@
             </tr>
             <tr>
               <td class="team-name-cell">{{ data.teams.home.tricode }}</td>
-              <td>{{ home_trad.fg }}/{{ home_trad.fga }}</td>
-              <td>{{ home_trad.fg3 }}/{{ home_trad.fg3a }}</td>
-              <td>{{ home_trad.ft }}/{{ home_trad.fta }}</td>
+              <td>{{ home_trad.fg }}/{{ home_trad.fga }}{% if home_trad.fga %} ({{ (home_trad.fg * 100.0 / home_trad.fga)|round(1) }}%){% endif %}</td>
+              <td>{{ home_trad.fg3 }}/{{ home_trad.fg3a }}{% if home_trad.fg3a %} ({{ (home_trad.fg3 * 100.0 / home_trad.fg3a)|round(1) }}%){% endif %}</td>
+              <td>{{ home_trad.ft }}/{{ home_trad.fta }}{% if home_trad.fta %} ({{ (home_trad.ft * 100.0 / home_trad.fta)|round(1) }}%){% endif %}</td>
               <td>{{ home_trad.trb }}</td>
+              <td>{{ home_trad.orb }}</td>
+              <td>{{ home_trad.drb }}</td>
               <td>{{ home_trad.ast }}</td>
               <td>{{ home_trad.stl }}</td>
               <td>{{ home_trad.blk }}</td>
@@ -630,6 +635,8 @@
                 <th>3P</th>
                 <th>FT</th>
                 <th>REB</th>
+                <th>OREB</th>
+                <th>DREB</th>
                 <th>AST</th>
                 <th>STL</th>
                 <th>BLK</th>
@@ -648,6 +655,8 @@
                 "ft": 0,
                 "fta": 0,
                 "trb": 0,
+                "orb": 0,
+                "drb": 0,
                 "ast": 0,
                 "stl": 0,
                 "blk": 0,
@@ -661,10 +670,12 @@
                 <tr>
                   <td class="team-name-cell">{{ p.name }}</td>
                   <td>{{ p.min }}</td>
-                  <td>{{ stats.fg }}/{{ stats.fga }}</td>
-                  <td>{{ stats.fg3 }}/{{ stats.fg3a }}</td>
-                  <td>{{ stats.ft }}/{{ stats.fta }}</td>
+                  <td>{{ stats.fg }}/{{ stats.fga }}{% if stats.fga %} ({{ (stats.fg * 100.0 / stats.fga)|round(1) }}%){% endif %}</td>
+                  <td>{{ stats.fg3 }}/{{ stats.fg3a }}{% if stats.fg3a %} ({{ (stats.fg3 * 100.0 / stats.fg3a)|round(1) }}%){% endif %}</td>
+                  <td>{{ stats.ft }}/{{ stats.fta }}{% if stats.fta %} ({{ (stats.ft * 100.0 / stats.fta)|round(1) }}%){% endif %}</td>
                   <td>{{ stats.trb }}</td>
+                  <td>{{ stats.orb }}</td>
+                  <td>{{ stats.drb }}</td>
                   <td>{{ stats.ast }}</td>
                   <td>{{ stats.stl }}</td>
                   <td>{{ stats.blk }}</td>
@@ -680,6 +691,8 @@
                   "ft": team_totals.ft + (stats.ft or 0),
                   "fta": team_totals.fta + (stats.fta or 0),
                   "trb": team_totals.trb + (stats.trb or 0),
+                  "orb": team_totals.orb + (stats.orb or 0),
+                  "drb": team_totals.drb + (stats.drb or 0),
                   "ast": team_totals.ast + (stats.ast or 0),
                   "stl": team_totals.stl + (stats.stl or 0),
                   "blk": team_totals.blk + (stats.blk or 0),
@@ -692,10 +705,12 @@
               <tr class="totals-row">
                 <td class="team-name-cell">Team Totals</td>
                 <td></td>
-                <td>{{ team_totals.fg }}/{{ team_totals.fga }}</td>
-                <td>{{ team_totals.fg3 }}/{{ team_totals.fg3a }}</td>
-                <td>{{ team_totals.ft }}/{{ team_totals.fta }}</td>
+                <td>{{ team_totals.fg }}/{{ team_totals.fga }}{% if team_totals.fga %} ({{ (team_totals.fg * 100.0 / team_totals.fga)|round(1) }}%){% endif %}</td>
+                <td>{{ team_totals.fg3 }}/{{ team_totals.fg3a }}{% if team_totals.fg3a %} ({{ (team_totals.fg3 * 100.0 / team_totals.fg3a)|round(1) }}%){% endif %}</td>
+                <td>{{ team_totals.ft }}/{{ team_totals.fta }}{% if team_totals.fta %} ({{ (team_totals.ft * 100.0 / team_totals.fta)|round(1) }}%){% endif %}</td>
                 <td>{{ team_totals.trb }}</td>
+                <td>{{ team_totals.orb }}</td>
+                <td>{{ team_totals.drb }}</td>
                 <td>{{ team_totals.ast }}</td>
                 <td>{{ team_totals.stl }}</td>
                 <td>{{ team_totals.blk }}</td>
@@ -760,6 +775,8 @@
                         <th>3P</th>
                         <th>FT</th>
                         <th>REB</th>
+                        <th>OREB</th>
+                        <th>DREB</th>
                         <th>AST</th>
                         <th>STL</th>
                         <th>BLK</th>
@@ -771,10 +788,12 @@
                       {% for pid, p in q_players.items() if p.side == side %}
                         <tr>
                           <td class="team-name-cell">{{ p.name }}</td>
-                          <td>{{ p.fgm }}/{{ p.fga }}</td>
-                          <td>{{ p.tpm }}/{{ p.tpa }}</td>
-                          <td>{{ p.ftm }}/{{ p.fta }}</td>
-                          <td>{{ p.reb }} ({{ p.oreb }}/{{ p.dreb }})</td>
+                          <td>{{ p.fgm }}/{{ p.fga }}{% if p.fga %} ({{ (p.fgm * 100.0 / p.fga)|round(1) }}%){% endif %}</td>
+                          <td>{{ p.tpm }}/{{ p.tpa }}{% if p.tpa %} ({{ (p.tpm * 100.0 / p.tpa)|round(1) }}%){% endif %}</td>
+                          <td>{{ p.ftm }}/{{ p.fta }}{% if p.fta %} ({{ (p.ftm * 100.0 / p.fta)|round(1) }}%){% endif %}</td>
+                          <td>{{ p.reb }}</td>
+                          <td>{{ p.oreb }}</td>
+                          <td>{{ p.dreb }}</td>
                           <td>{{ p.ast }}</td>
                           <td>{{ p.stl }}</td>
                           <td>{{ p.blk }}</td>
@@ -785,10 +804,12 @@
 
                       <tr class="totals-row">
                         <td class="team-name-cell">Team Totals</td>
-                        <td>{{ tt.fgm }}/{{ tt.fga }}</td>
-                        <td>{{ tt.tpm }}/{{ tt.tpa }}</td>
-                        <td>{{ tt.ftm }}/{{ tt.fta }}</td>
-                        <td>{{ tt.reb }} ({{ tt.oreb }}/{{ tt.dreb }})</td>
+                        <td>{{ tt.fgm }}/{{ tt.fga }}{% if tt.fga %} ({{ (tt.fgm * 100.0 / tt.fga)|round(1) }}%){% endif %}</td>
+                        <td>{{ tt.tpm }}/{{ tt.tpa }}{% if tt.tpa %} ({{ (tt.tpm * 100.0 / tt.tpa)|round(1) }}%){% endif %}</td>
+                        <td>{{ tt.ftm }}/{{ tt.fta }}{% if tt.fta %} ({{ (tt.ftm * 100.0 / tt.fta)|round(1) }}%){% endif %}</td>
+                        <td>{{ tt.reb }}</td>
+                        <td>{{ tt.oreb }}</td>
+                        <td>{{ tt.dreb }}</td>
                         <td>{{ tt.ast }}</td>
                         <td>{{ tt.stl }}</td>
                         <td>{{ tt.blk }}</td>
