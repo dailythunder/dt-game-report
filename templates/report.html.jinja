@@ -319,6 +319,78 @@
       color: var(--okc-blue-dark);
     }
 
+    /* Beautiful leader cards */
+    .leaders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .leader-card {
+      background: linear-gradient(135deg, #f8f9fc 0%, #ffffff 100%);
+      border-radius: 10px;
+      padding: 14px;
+      border: 2px solid var(--border-subtle);
+      transition: all 0.2s ease;
+    }
+
+    .leader-card:hover {
+      border-color: var(--okc-blue);
+      box-shadow: 0 4px 12px rgba(0, 122, 193, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .leader-stat-name {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .leader-stat-icon {
+      font-size: 16px;
+    }
+
+    .leader-team-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid #e8ecf4;
+    }
+
+    .leader-team-row:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .leader-team-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--okc-blue-dark);
+    }
+
+    .leader-team-value {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--okc-orange);
+      margin-right: 8px;
+    }
+
+    .leader-player-name {
+      font-size: 13px;
+      color: var(--text-main);
+      display: block;
+      margin-top: 2px;
+    }
+
     .quarters-wrapper {
       display: flex;
       flex-direction: column;
@@ -451,6 +523,13 @@
       font-style: italic;
     }
 
+    /* Tablet optimizations */
+    @media (max-width: 1024px) and (min-width: 769px) {
+      .leaders-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
     /* Mobile optimizations */
     @media (max-width: 768px) {
       .header {
@@ -484,6 +563,11 @@
       }
 
       .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Leaders grid responsive */
+      .leaders-grid {
         grid-template-columns: 1fr;
       }
 
@@ -837,7 +921,6 @@
           <thead>
             <tr>
               <th>Team</th>
-              <th class="pts-highlight">PTS</th>
               <th>FG</th>
               <th>FG%</th>
               <th>3P</th>
@@ -858,7 +941,6 @@
             <!-- Away first, home second - with winner highlighting -->
             <tr class="{% if data.meta.final_score_away > data.meta.final_score_home %}winner-row{% endif %}">
               <td class="team-name-cell">{{ data.teams.away.tricode }}</td>
-              <td class="pts-highlight">{{ away_trad.pts }}</td>
               <td>{{ away_trad.fg }}/{{ away_trad.fga }}</td>
               <td>{% if away_trad.fga %}{{ (away_trad.fg * 100.0 / away_trad.fga)|round(1) }}%{% endif %}</td>
               <td>{{ away_trad.fg3 }}/{{ away_trad.fg3a }}</td>
@@ -876,7 +958,6 @@
             </tr>
             <tr class="{% if data.meta.final_score_home > data.meta.final_score_away %}winner-row{% endif %}">
               <td class="team-name-cell">{{ data.teams.home.tricode }}</td>
-              <td class="pts-highlight">{{ home_trad.pts }}</td>
               <td>{{ home_trad.fg }}/{{ home_trad.fga }}</td>
               <td>{% if home_trad.fga %}{{ (home_trad.fg * 100.0 / home_trad.fga)|round(1) }}%{% endif %}</td>
               <td>{{ home_trad.fg3 }}/{{ home_trad.fg3a }}</td>
@@ -922,63 +1003,121 @@
         </table>
       </section>
 
-      <!-- Leaders -->
+      <!-- Leaders - BEAUTIFUL CARD LAYOUT -->
       <section class="card">
         <div class="section-label">Leaders</div>
         <h2>Team Leaders – Traditional</h2>
 
-        <!-- Away first -->
-        <div>
-          <h3>{{ data.teams.away.full_name }}</h3>
-          {% set away_leaders = data.leaders.away %}
-          <div>
-            <div class="leaders-chip">
-              <span class="label">PTS</span>
-              {{ away_leaders.points.value }} – {{ away_leaders.points.players | join(", ") }}
+        <div class="leaders-grid">
+          <!-- Points Card -->
+          <div class="leader-card">
+            <div class="leader-stat-name">
+              <span class="leader-stat-icon">🏀</span>
+              Points
             </div>
-            <div class="leaders-chip">
-              <span class="label">REB</span>
-              {{ away_leaders.rebounds.value }} – {{ away_leaders.rebounds.rebounds | default(away_leaders.rebounds.players) | join(", ") }}
+            {% set away_leaders = data.leaders.away %}
+            {% set home_leaders = data.leaders.home %}
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">{{ data.teams.away.tricode }}</div>
+                <span class="leader-player-name">{{ away_leaders.points.players[0] if away_leaders.points.players else "N/A" }}</span>
+              </div>
+              <span class="leader-team-value">{{ away_leaders.points.value }}</span>
             </div>
-            <div class="leaders-chip">
-              <span class="label">AST</span>
-              {{ away_leaders.assists.value }} – {{ away_leaders.assists.players | join(", ") }}
-            </div>
-            <div class="leaders-chip">
-              <span class="label">STL</span>
-              {{ away_leaders.steals.value }} – {{ away_leaders.steals.players | join(", ") }}
-            </div>
-            <div class="leaders-chip">
-              <span class="label">BLK</span>
-              {{ away_leaders.blocks.value }} – {{ away_leaders.blocks.players | join(", ") }}
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">{{ data.teams.home.tricode }}</div>
+                <span class="leader-player-name">{{ home_leaders.points.players[0] if home_leaders.points.players else "N/A" }}</span>
+              </div>
+              <span class="leader-team-value">{{ home_leaders.points.value }}</span>
             </div>
           </div>
-        </div>
 
-        <!-- Home second -->
-        <div style="margin-top: 8px;">
-          <h3>{{ data.teams.home.full_name }}</h3>
-          {% set home_leaders = data.leaders.home %}
-          <div>
-            <div class="leaders-chip">
-              <span class="label">PTS</span>
-              {{ home_leaders.points.value }} – {{ home_leaders.points.players | join(", ") }}
+          <!-- Rebounds Card -->
+          <div class="leader-card">
+            <div class="leader-stat-name">
+              <span class="leader-stat-icon">💪</span>
+              Rebounds
             </div>
-            <div class="leaders-chip">
-              <span class="label">REB</span>
-              {{ home_leaders.rebounds.value }} – {{ home_leaders.rebounds.players | join(", ") }}
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">{{ data.teams.away.tricode }}</div>
+                <span class="leader-player-name">{{ (away_leaders.rebounds.rebounds if away_leaders.rebounds.rebounds is defined else away_leaders.rebounds.players)[0] if (away_leaders.rebounds.rebounds if away_leaders.rebounds.rebounds is defined else away_leaders.rebounds.players) else "N/A" }}</span>
+              </div>
+              <span class="leader-team-value">{{ away_leaders.rebounds.value }}</span>
             </div>
-            <div class="leaders-chip">
-              <span class="label">AST</span>
-              {{ home_leaders.assists.value }} – {{ home_leaders.assists.players | join(", ") }}
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">{{ data.teams.home.tricode }}</div>
+                <span class="leader-player-name">{{ (home_leaders.rebounds.rebounds if home_leaders.rebounds.rebounds is defined else home_leaders.rebounds.players)[0] if (home_leaders.rebounds.rebounds if home_leaders.rebounds.rebounds is defined else home_leaders.rebounds.players) else "N/A" }}</span>
+              </div>
+              <span class="leader-team-value">{{ home_leaders.rebounds.value }}</span>
             </div>
-            <div class="leaders-chip">
-              <span class="label">STL</span>
-              {{ home_leaders.steals.value }} – {{ home_leaders.steals.players | join(", ") }}
+          </div>
+
+          <!-- Assists Card -->
+          <div class="leader-card">
+            <div class="leader-stat-name">
+              <span class="leader-stat-icon">🤝</span>
+              Assists
             </div>
-            <div class="leaders-chip">
-              <span class="label">BLK</span>
-              {{ home_leaders.blocks.value }} – {{ home_leaders.blocks.players | join(", ") }}
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">{{ data.teams.away.tricode }}</div>
+                <span class="leader-player-name">{{ away_leaders.assists.players[0] if away_leaders.assists.players else "N/A" }}</span>
+              </div>
+              <span class="leader-team-value">{{ away_leaders.assists.value }}</span>
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">{{ data.teams.home.tricode }}</div>
+                <span class="leader-player-name">{{ home_leaders.assists.players[0] if home_leaders.assists.players else "N/A" }}</span>
+              </div>
+              <span class="leader-team-value">{{ home_leaders.assists.value }}</span>
+            </div>
+          </div>
+
+          <!-- Steals Card -->
+          <div class="leader-card">
+            <div class="leader-stat-name">
+              <span class="leader-stat-icon">👐</span>
+              Steals
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">{{ data.teams.away.tricode }}</div>
+                <span class="leader-player-name">{{ away_leaders.steals.players[0] if away_leaders.steals.players else "N/A" }}</span>
+              </div>
+              <span class="leader-team-value">{{ away_leaders.steals.value }}</span>
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">{{ data.teams.home.tricode }}</div>
+                <span class="leader-player-name">{{ home_leaders.steals.players[0] if home_leaders.steals.players else "N/A" }}</span>
+              </div>
+              <span class="leader-team-value">{{ home_leaders.steals.value }}</span>
+            </div>
+          </div>
+
+          <!-- Blocks Card -->
+          <div class="leader-card">
+            <div class="leader-stat-name">
+              <span class="leader-stat-icon">🚫</span>
+              Blocks
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">{{ data.teams.away.tricode }}</div>
+                <span class="leader-player-name">{{ away_leaders.blocks.players[0] if away_leaders.blocks.players else "N/A" }}</span>
+              </div>
+              <span class="leader-team-value">{{ away_leaders.blocks.value }}</span>
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">{{ data.teams.home.tricode }}</div>
+                <span class="leader-player-name">{{ home_leaders.blocks.players[0] if home_leaders.blocks.players else "N/A" }}</span>
+              </div>
+              <span class="leader-team-value">{{ home_leaders.blocks.value }}</span>
             </div>
           </div>
         </div>
