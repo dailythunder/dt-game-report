@@ -633,8 +633,11 @@
                 <th>Player</th>
                 <th>MIN</th>
                 <th>FG</th>
+                <th>FG%</th>
                 <th>3P</th>
+                <th>3P%</th>
                 <th>FT</th>
+                <th>FT%</th>
                 <th>REB</th>
                 <th>OREB</th>
                 <th>DREB</th>
@@ -671,9 +674,12 @@
                 <tr>
                   <td class="team-name-cell">{{ p.name }}</td>
                   <td>{{ p.min }}</td>
-                  <td>{{ stats.fg }}/{{ stats.fga }}{% if stats.fga %} ({{ (stats.fg * 100.0 / stats.fga)|round(1) }}%){% endif %}</td>
-                  <td>{{ stats.fg3 }}/{{ stats.fg3a }}{% if stats.fg3a %} ({{ (stats.fg3 * 100.0 / stats.fg3a)|round(1) }}%){% endif %}</td>
-                  <td>{{ stats.ft }}/{{ stats.fta }}{% if stats.fta %} ({{ (stats.ft * 100.0 / stats.fta)|round(1) }}%){% endif %}</td>
+                  <td>{{ stats.fg }}/{{ stats.fga }}</td>
+                  <td>{% if stats.fga %}{{ (stats.fg * 100.0 / stats.fga)|round(1) }}%{% endif %}</td>
+                  <td>{{ stats.fg3 }}/{{ stats.fg3a }}</td>
+                  <td>{% if stats.fg3a %}{{ (stats.fg3 * 100.0 / stats.fg3a)|round(1) }}%{% endif %}</td>
+                  <td>{{ stats.ft }}/{{ stats.fta }}</td>
+                  <td>{% if stats.fta %}{{ (stats.ft * 100.0 / stats.fta)|round(1) }}%{% endif %}</td>
                   <td>{{ stats.trb }}</td>
                   <td>{{ stats.orb }}</td>
                   <td>{{ stats.drb }}</td>
@@ -706,9 +712,12 @@
               <tr class="totals-row">
                 <td class="team-name-cell">Team Totals</td>
                 <td></td>
-                <td>{{ team_totals.fg }}/{{ team_totals.fga }}{% if team_totals.fga %} ({{ (team_totals.fg * 100.0 / team_totals.fga)|round(1) }}%){% endif %}</td>
-                <td>{{ team_totals.fg3 }}/{{ team_totals.fg3a }}{% if team_totals.fg3a %} ({{ (team_totals.fg3 * 100.0 / team_totals.fg3a)|round(1) }}%){% endif %}</td>
-                <td>{{ team_totals.ft }}/{{ team_totals.fta }}{% if team_totals.fta %} ({{ (team_totals.ft * 100.0 / team_totals.fta)|round(1) }}%){% endif %}</td>
+                <td>{{ team_totals.fg }}/{{ team_totals.fga }}</td>
+                <td>{% if team_totals.fga %}{{ (team_totals.fg * 100.0 / team_totals.fga)|round(1) }}%{% endif %}</td>
+                <td>{{ team_totals.fg3 }}/{{ team_totals.fg3a }}</td>
+                <td>{% if team_totals.fg3a %}{{ (team_totals.fg3 * 100.0 / team_totals.fg3a)|round(1) }}%{% endif %}</td>
+                <td>{{ team_totals.ft }}/{{ team_totals.fta }}</td>
+                <td>{% if team_totals.fta %}{{ (team_totals.ft * 100.0 / team_totals.fta)|round(1) }}%{% endif %}</td>
                 <td>{{ team_totals.trb }}</td>
                 <td>{{ team_totals.orb }}</td>
                 <td>{{ team_totals.drb }}</td>
@@ -768,13 +777,20 @@
                       <col class="col-stat">
                       <col class="col-stat">
                       <col class="col-stat">
+                      <col class="col-stat">
+                      <col class="col-stat">
+                      <col class="col-stat">
+                      <col class="col-stat">
                     </colgroup>
                     <thead>
                       <tr>
                         <th>Player</th>
                         <th>FG</th>
+                        <th>FG%</th>
                         <th>3P</th>
+                        <th>3P%</th>
                         <th>FT</th>
+                        <th>FT%</th>
                         <th>REB</th>
                         <th>OREB</th>
                         <th>DREB</th>
@@ -789,9 +805,12 @@
                       {% for pid, p in q_players.items() if p.side == side %}
                         <tr>
                           <td class="team-name-cell">{{ p.name }}</td>
-                          <td>{{ p.fgm }}/{{ p.fga }}{% if p.fga %} ({{ (p.fgm * 100.0 / p.fga)|round(1) }}%){% endif %}</td>
-                          <td>{{ p.tpm }}/{{ p.tpa }}{% if p.tpa %} ({{ (p.tpm * 100.0 / p.tpa)|round(1) }}%){% endif %}</td>
-                          <td>{{ p.ftm }}/{{ p.fta }}{% if p.fta %} ({{ (p.ftm * 100.0 / p.fta)|round(1) }}%){% endif %}</td>
+                          <td>{{ p.fgm }}/{{ p.fga }}</td>
+                          <td>{% if p.fga %}{{ (p.fgm * 100.0 / p.fga)|round(1) }}%{% endif %}</td>
+                          <td>{{ p.tpm }}/{{ p.tpa }}</td>
+                          <td>{% if p.tpa %}{{ (p.tpm * 100.0 / p.tpa)|round(1) }}%{% endif %}</td>
+                          <td>{{ p.ftm }}/{{ p.fta }}</td>
+                          <td>{% if p.fta %}{{ (p.ftm * 100.0 / p.fta)|round(1) }}%{% endif %}</td>
                           <td>{{ p.reb }}</td>
                           <td>{{ p.oreb }}</td>
                           <td>{{ p.dreb }}</td>
@@ -805,9 +824,12 @@
 
                       <tr class="totals-row">
                         <td class="team-name-cell">Team Totals</td>
-                        <td>{{ tt.fgm }}/{{ tt.fga }}{% if tt.fga %} ({{ (tt.fgm * 100.0 / tt.fga)|round(1) }}%){% endif %}</td>
-                        <td>{{ tt.tpm }}/{{ tt.tpa }}{% if tt.tpa %} ({{ (tt.tpm * 100.0 / tt.tpa)|round(1) }}%){% endif %}</td>
-                        <td>{{ tt.ftm }}/{{ tt.fta }}{% if tt.fta %} ({{ (tt.ftm * 100.0 / tt.fta)|round(1) }}%){% endif %}</td>
+                        <td>{{ tt.fgm }}/{{ tt.fga }}</td>
+                        <td>{% if tt.fga %}{{ (tt.fgm * 100.0 / tt.fga)|round(1) }}%{% endif %}</td>
+                        <td>{{ tt.tpm }}/{{ tt.tpa }}</td>
+                        <td>{% if tt.tpa %}{{ (tt.tpm * 100.0 / tt.tpa)|round(1) }}%{% endif %}</td>
+                        <td>{{ tt.ftm }}/{{ tt.fta }}</td>
+                        <td>{% if tt.fta %}{{ (tt.ftm * 100.0 / tt.fta)|round(1) }}%{% endif %}</td>
                         <td>{{ tt.reb }}</td>
                         <td>{{ tt.oreb }}</td>
                         <td>{{ tt.dreb }}</td>
