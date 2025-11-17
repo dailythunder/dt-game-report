@@ -577,4 +577,238 @@ def compute_net_runs(
     """Compute 8+ point net runs by either team."""
     runs: List[Dict[str, Any]] = []
 
-    current_side: Optional[
+    current_side: Optional[str] = None
+    current_team_id: Optional[str] = None
+    start_play: Optional[Dict[str, Any]] = None
+    start_margin_side: Optional[int] = None
+    current_net: int = 0
+    last_scoring_play: Optional[Dict[str, Any]] = None
+
+    def margin_for_side(pl: Dict[str, Any], side: str) -> int:
+        margin = int(pl.get("home_score", 0)) - int(pl.get("away_score", 0))
+        return margin if side == "home" else -margin
+
+    def flush_run(final_play: Optional[Dict[str, Any]]) -> None:
+        nonlocal current_side, current_team_id, start_play, start_margin_side, current_net
+        if current_side and start_play and final_play and current_net >= min_margin:
+            runs.append(
+                {
+                    "side": current_side,
+                    "team_id": current_team_id,
+                    "net_points": current_net,
+                    "start_index": start_play["index"],
+                    "end_index": final_play["index"],
+                    "start_period": start_play.get("period"),
+                    "start_clock": start_play.get("clock"),
+                    "end_period": final_play.get("period"),
+                    "end_clock": final_play.get("clock"),
+                }
+            )
+        current_side = None
+        current_team_id = None
+        start_play = None
+        start_margin_side = None
+        current_net = 0
+
+    for pl in plays_seq:
+        if not pl.get("scoring_play"):
+            continue
+
+        last_scoring_play = pl
+
+        team_id = pl.get("team_id")
+        side_scorer = team_id_to_side.get(team_id) if team_id else None
+        if side_scorer not in ("home", "away"):
+            flush_run(pl)
+            continue
+
+        if current_side is None:
+            current_side = side_scorer
+            current_team_id = team_id
+            start_play = pl
+            start_margin_side = margin_for_side(pl, current_side)
+            current_net = 0
+            continue
+
+        cur_margin_side = margin_for_side(pl, current_side)
+        net_change = cur_margin_side - (start_margin_side or 0)
+
+        if side_scorer == current_side:
+            current_net = net_change
+        else:
+            if net_change < 0:
+                flush_run(pl)
+                current_side = side_scorer
+                current_team_id = team_id
+                start_play = pl
+                start_margin_side = margin_for_side(pl, current_side)
+                current_net = 0
+            else:
+                current_net = net_change
+
+    if last_scoring_play is not None:
+        flush_run(last_scoring_play)
+
+    return runs
+
+
+def compute_highlight_runs(
+    plays_seq: List[Dict[str, Any]],
+    team_id_to_side: Dict[str, str],
+    min_for: int = 8,
+    max_against: int = 5,
+) -> List[Dict[str, Any]]:
+    """Compute highlight runs using start-at-each-scoring-play logic."""
+    runs: List[Dict[str, Any]] = []
+
+    scoring_events = [pl for pl in plays_seq if pl.get("scoring_play")]
+    n = len(scoring_events)
+
+    for i in range(n):
+        start_ev = scoring_events[i]
+        start_team_id = start_ev.get("team_id")
+        start_side = team_id_to_side.get(start_team_id)
+        if start_side not in ("home", "away"):
+            continue
+
+        team_a_score = 0
+        team_b_score = 0
+        max_net = 0
+        best_end_ev: Optional[Dict[str, Any]] = None
+        best_for = 0
+        best_against = 0
+
+        for j in range(i, n):
+            ev = scoring_events[j]
+            ev_side = team_id_to_side.get(ev.get("team_id"))
+            pts = int(ev.get("score_value") or 0)
+
+            if ev_side == start_side:
+                team_a_score += pts
+            elif ev_side in ("home", "away"):
+                team_b_score += pts
+
+            current_net = team_a_score - team_b_score
+
+            if (
+                current_net >= min_for
+                and team_b_score <= max_against
+                and current_net > max_net
+            ):
+                max_net = current_net
+                best_end_ev = ev
+                best_for = team_a_score
+                best_against = team_b_score
+
+            if team_b_score > max_against:
+                break
+
+        if best_end_ev is not None:
+            runs.append(
+                {
+                    "side": start_side,
+                    "team_id": start_team_id,
+                    "points_for": best_for,
+                    "points_against": best_against,
+                    "net_points": best_for - best_against,
+                    "start_index": start_ev["index"],
+                    "end_index": best_end_ev["index"],
+                    "start_period": start_ev.get("period"),
+                    "start_clock": start_ev.get("clock"),
+                    "end_period": best_end_ev.get("period"),
+                    "end_clock": best_end_ev.get("clock"),
+                }
+            )
+
+    return runs
+
+
+def run_analysis(game_id: Optional[str] = None) -> None:
+    logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
+
+    if not game_id:
+        game_id = _get_latest_summary_game_id()
+    if not game_id:
+        raise SystemExit(
+            "No game id provided and no espn_summary_*.json found in fixtures."
+        )
+
+    LOG.info("Using game id for analysis: %s", game_id)
+    summary = _load_summary(game_id)
+    maps = _build_team_maps(summary)
+    teams_by_side = maps["teams_by_side"]
+    team_id_to_side = maps["team_id_to_side"]
+    comp = maps["competition"]
+
+    player_maps = _build_player_maps(summary, team_id_to_side)
+    players_by_id = player_maps["players_by_id"]
+
+    plays_seq = _extract_basic_play_sequence(summary)
+
+    # basic points by quarter from plays (unchanged)
+    q_points = compute_quarter_team_points(plays_seq, team_id_to_side)
+
+    # full team + player quarter box-style totals (now includes tov)
+    quarter_team_totals, quarter_player_totals = compute_quarter_team_and_player_totals(
+        plays_seq, team_id_to_side, players_by_id
+    )
+
+    # runs
+    unanswered_runs = compute_unanswered_runs(
+        plays_seq, team_id_to_side, min_points=7
+    )
+    net_runs = compute_net_runs(plays_seq, team_id_to_side, min_margin=8)
+    highlight_runs = compute_highlight_runs(
+        plays_seq, team_id_to_side, min_for=8, max_against=5
+    )
+
+    # basic meta
+    season = summary.get("header", {}).get("season", {}).get("year")
+    date_iso = comp.get("date", "")
+    game_date = date_iso.split("T")[0] if "T" in date_iso else date_iso
+
+    out_dir = FIXTURES_DIR / "analysis"
+    out_dir.mkdir(parents=True, exist_ok=True)
+
+    out = {
+        "game_id": game_id,
+        "date": game_date,
+        "season": season,
+        "teams": teams_by_side,
+        "quarter_team_points": q_points,
+        "quarter_team_totals": quarter_team_totals,
+        "quarter_player_totals": quarter_player_totals,
+        "unanswered_runs": unanswered_runs,
+        "net_runs": net_runs,
+        "highlight_runs": highlight_runs,
+    }
+
+    out_path = out_dir / f"analysis_{game_id}.json"
+    with out_path.open("w", encoding="utf-8") as f:
+        json.dump(out, f, ensure_ascii=False, indent=2)
+
+    LOG.info("Wrote analysis JSON: %s", out_path)
+
+
+def main(argv: Optional[List[str]] = None) -> None:
+    parser = argparse.ArgumentParser(
+        description=(
+            "Lab script: quarter team points + full quarter team/player box "
+            "+ 7+ unanswered runs + 8+ net runs + highlight runs "
+            "(>=8 pts, opponent <=5)"
+        )
+    )
+    parser.add_argument(
+        "--game-id",
+        dest="game_id",
+        help=(
+            "ESPN game id (e.g. 401810084). If omitted, uses latest "
+            "espn_summary_*.json in fixtures."
+        ),
+    )
+    args = parser.parse_args(argv)
+    run_analysis(args.game_id)
+
+
+if __name__ == "__main__":
+    main()
