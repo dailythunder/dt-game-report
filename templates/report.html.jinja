@@ -48,6 +48,26 @@
       gap: 4px;
     }
 
+    .header-logos {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      margin-top: 4px;
+    }
+
+    .team-logo img {
+      height: 40px;
+      width: auto;
+      display: block;
+    }
+
+    .vs-separator {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+    }
+
+
     .brand {
       font-size: 14px;
       letter-spacing: 0.08em;
@@ -151,8 +171,9 @@
     }
 
     table.player-table {
-      width: max-content;
-      table-layout: auto;
+      width: 100%;
+      min-width: 1100px;
+      table-layout: fixed;
       font-size: 13px;
     }
 
@@ -316,6 +337,15 @@
     <header class="header">
       <div class="header-left">
         <div class="brand">Daily Thunder Game Report</div>
+        <div class="header-logos">
+          <div class="team-logo">
+            <img src="{{ data.teams.home.logo }}" alt="{{ data.teams.home.full_name }} logo">
+          </div>
+          <div class="vs-separator">vs</div>
+          <div class="team-logo">
+            <img src="{{ data.teams.away.logo }}" alt="{{ data.teams.away.full_name }} logo">
+          </div>
+        </div>
         <div class="title">
           {{ data.teams.home.tricode }} vs {{ data.teams.away.tricode }}
         </div>
