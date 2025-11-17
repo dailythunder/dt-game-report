@@ -8,6 +8,11 @@ from typing import Any, Dict, List, Optional
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
+from .quarters_and_runs_analysis import analyze_quarters_and_runs
+from .quarters_and_runs_html_integration import (
+    augment_report_context_with_quarters_and_runs,
+)
+
 LOG = logging.getLogger("dt_game_report.generate_report")
 
 REPO_ROOT = Path(__file__).resolve().parents[2]
@@ -363,6 +368,9 @@ def build_data(game_id: str) -> Dict[str, Any]:
     quarters = _build_quarters(comp, teams_by_side)
     download_urls = _build_download_urls(game_id)
 
+    # NEW: run quarter-by-quarter + runs analysis from ESPN summary
+    quarters_and_runs = analyze_quarters_and_runs(summary, game_id=game_id)
+
     data: Dict[str, Any] = {
         "meta": {
             "game_id": game_id,
@@ -385,6 +393,10 @@ def build_data(game_id: str) -> Dict[str, Any]:
         "largest_lead": totals["largest_lead"],
         "files": download_urls,
     }
+
+    # NEW: attach into context using the helper (puts it under data["quarters_and_runs"])
+    data = augment_report_context_with_quarters_and_runs(data, quarters_and_runs)
+
     return data
 
 
