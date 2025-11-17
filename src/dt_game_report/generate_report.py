@@ -7,19 +7,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-
-try:
-    # When run as a package: python -m dt_game_report.generate_report
-    from .quarters_and_runs_analysis import analyze_quarters_and_runs
-    from .quarters_and_runs_html_integration import (
-        augment_report_context_with_quarters_and_runs,
-    )
-except ImportError:
-    # When run as a script: python src/dt_game_report/generate_report.py
-    from quarters_and_runs_analysis import analyze_quarters_and_runs
-    from quarters_and_runs_html_integration import (
-        augment_report_context_with_quarters_and_runs,
-    )
+from dt_game_report.quarters_and_runs_analysis import analyze_quarters_and_runs
 
 
 LOG = logging.getLogger("dt_game_report.generate_report")
@@ -360,6 +348,7 @@ def _build_download_urls(game_id: str) -> Dict[str, str]:
     }
 
 
+
 def build_data(game_id: str) -> Dict[str, Any]:
     summary = _load_summary(game_id)
     maps = _build_team_maps(summary)
@@ -377,7 +366,7 @@ def build_data(game_id: str) -> Dict[str, Any]:
     quarters = _build_quarters(comp, teams_by_side)
     download_urls = _build_download_urls(game_id)
 
-    # NEW: run quarter-by-quarter + runs analysis from ESPN summary
+    # Quarter-by-quarter + runs (from ESPN summary play-by-play)
     quarters_and_runs = analyze_quarters_and_runs(summary, game_id=game_id)
 
     data: Dict[str, Any] = {
@@ -401,11 +390,8 @@ def build_data(game_id: str) -> Dict[str, Any]:
         "leaders": leaders,
         "largest_lead": totals["largest_lead"],
         "files": download_urls,
+        "quarters_and_runs": quarters_and_runs,
     }
-
-    # NEW: attach into context using the helper (puts it under data["quarters_and_runs"])
-    data = augment_report_context_with_quarters_and_runs(data, quarters_and_runs)
-
     return data
 
 
