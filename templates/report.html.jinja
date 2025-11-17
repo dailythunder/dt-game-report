@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Daily Thunder Game Report - {{ data.meta.game_id }}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      /* Thunder-ish palette */
+      --okc-blue: #007ac1;
+      --okc-blue-dark: #005a9c;
+      --okc-orange: #f25c19;
+      --bg: #e4ecf6;
+      --card-bg: #ffffff;
+      --text-main: #111111;
+      --text-muted: #555555;
+      --border-subtle: #d0d7e2;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      gap: 16px;
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 4px;
+    }
+
+    .brand {
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--okc-blue-dark);
+      font-weight: 600;
+    }
+
+    .title {
+      font-size: 26px;
+      font-weight: 800;
+      color: var(--okc-blue-dark);
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .scoreline {
+      text-align: right;
+    }
+
+    .scoreline-main {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--okc-orange);
+    }
+
+    .scoreline-teams {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background-color: #d1e5f8;
+      color: var(--okc-blue-dark);
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--okc-blue-dark);
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .card h2 {
+      font-size: 18px;
+      margin: 0 0 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card h3 {
+      font-size: 16px;
+      margin: 16px 0 8px;
+    }
+
+    .section-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      table-layout: fixed;
+    }
+
+    th, td {
+      padding: 4px 6px;
+      text-align: right;
+      border-bottom: 1px solid #e2e6f0;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    thead tr {
+      background-color: #dbe6f7;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f7f9fc;
+    }
+
+    .team-name-cell {
+      font-weight: 600;
+    }
+
+    .totals-row {
+      font-weight: 700;
+      background-color: #e3edff;
+    }
+
+    .leaders-chip {
+      display: inline-flex;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background-color: #f4f6ff;
+      border: 1px solid #d6ddff;
+      font-size: 12px;
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+
+    .leaders-chip span.label {
+      font-weight: 600;
+      margin-right: 4px;
+      color: var(--okc-blue-dark);
+    }
+
+    .quarters-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .quarter-block {
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 10px 12px 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .quarter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+
+    .quarter-header-left {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--okc-blue-dark);
+    }
+
+    .quarter-header-right {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    .quarter-card {
+      margin-top: 8px;
+    }
+
+    .quarter-team-label {
+      font-weight: 600;
+      font-size: 13px;
+      margin-top: 6px;
+      margin-bottom: 4px;
+      color: var(--okc-blue-dark);
+    }
+
+    .score-by-quarter-table th,
+    .score-by-quarter-table td {
+      text-align: center;
+    }
+
+    .score-by-quarter-table th:first-child,
+    .score-by-quarter-table td:first-child {
+      text-align: left;
+    }
+
+    /* Column widths for player tables */
+    .player-table col.col-player {
+      width: 30%;
+    }
+    .player-table col.col-min {
+      width: 8%;
+    }
+    .player-table col.col-stat {
+      width: 6%;
+    }
+
+    .downloads-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 4px 0 0;
+    }
+
+    .downloads-list li {
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .downloads-list a {
+      color: var(--okc-blue-dark);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--okc-blue-dark);
+    }
+
+    .downloads-list a:hover {
+      color: var(--okc-orange);
+      border-bottom-color: var(--okc-orange);
+    }
+
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .scoreline {
+        text-align: left;
+      }
+
+      th, td {
+        font-size: 12px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div class="header-left">
+        <div class="brand">Daily Thunder Game Report</div>
+        <div class="title">
+          {{ data.teams.home.tricode }} vs {{ data.teams.away.tricode }}
+        </div>
+        <div class="subtitle">
+          {{ data.meta.date }} · Game ID {{ data.meta.game_id }}
+        </div>
+      </div>
+      <div class="scoreline">
+        <div class="scoreline-main">
+          {{ data.teams.home.tricode }} {{ data.meta.final_score_home }}
+          &nbsp;–&nbsp;
+          {{ data.meta.final_score_away }} {{ data.teams.away.tricode }}
+        </div>
+        <div class="scoreline-teams">
+          {{ data.teams.home.full_name }} vs {{ data.teams.away.full_name }}
+        </div>
+      </div>
+    </header>
+
+    <div class="pill-row">
+      <div class="pill">{{ data.teams.away.full_name }} (Away)</div>
+      <div class="pill">{{ data.teams.home.full_name }} (Home)</div>
+      <div class="pill">Season {{ data.meta.season }}</div>
+    </div>
+
+    <main class="layout">
+      <!-- Score by quarter + largest lead -->
+      <section class="card">
+        <div class="section-label">Score Summary</div>
+        <h2>
+          Score by Quarter
+          <span style="font-size: 13px; font-weight: 400; color: var(--text-muted);">
+            Largest lead: {{ data.largest_lead.home }} ({{ data.teams.home.tricode }}) /
+            {{ data.largest_lead.away }} ({{ data.teams.away.tricode }})
+          </span>
+        </h2>
+        <table class="score-by-quarter-table">
+          <thead>
+            <tr>
+              <th>Team</th>
+              {% for q in data.quarters %}
+                <th>Q{{ q.number }}</th>
+              {% endfor %}
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Away row first, home row second -->
+            <tr>
+              <td class="team-name-cell">{{ data.teams.away.tricode }}</td>
+              {% for q in data.quarters %}
+                <td>{{ q.away_score }}</td>
+              {% endfor %}
+              <td>{{ data.meta.final_score_away }}</td>
+            </tr>
+            <tr>
+              <td class="team-name-cell">{{ data.teams.home.tricode }}</td>
+              {% for q in data.quarters %}
+                <td>{{ q.home_score }}</td>
+              {% endfor %}
+              <td>{{ data.meta.final_score_home }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Game flow using runs data -->
+      <section class="card">
+        <div class="section-label">Game Flow</div>
+        <h2>Scoring Runs</h2>
+
+        {% set qr = data.quarters_and_runs %}
+        {% set unanswered = qr.unanswered_runs %}
+        {% set net_runs = qr.net_runs %}
+        {% set highlight = qr.highlight_runs %}
+
+        <div class="quarters-wrapper">
+          <!-- 7+ unanswered runs -->
+          <div class="quarter-block">
+            <div class="quarter-header">
+              <div class="quarter-header-left">7+ unanswered runs</div>
+              <div class="quarter-header-right">
+                Based on ESPN play-by-play scoring events.
+              </div>
+            </div>
+            <ul class="downloads-list">
+              {% if unanswered %}
+                {% for r in unanswered %}
+                  {% set side = r.side %}
+                  {% set team = data.teams[side] %}
+                  <li>
+                    {{ team.tricode }}:
+                    {{ r.points }}-0 run
+                    (Q{{ r.start_period }} {{ r.start_clock }} → Q{{ r.end_period }} {{ r.end_clock }})
+                  </li>
+                {% endfor %}
+              {% else %}
+                <li>No 7+ unanswered runs in this one.</li>
+              {% endif %}
+            </ul>
+          </div>
+
+          <!-- 8+ net runs -->
+          <div class="quarter-block">
+            <div class="quarter-header">
+              <div class="quarter-header-left">8+ net runs (scoreboard margin)</div>
+              <div class="quarter-header-right">
+                Net swings in margin from a given scoring stretch.
+              </div>
+            </div>
+            <ul class="downloads-list">
+              {% if net_runs %}
+                {% for r in net_runs %}
+                  {% set side = r.side %}
+                  {% set team = data.teams[side] %}
+                  <li>
+                    {{ team.tricode }}:
+                    +{{ r.net_points }} net
+                    (Q{{ r.start_period }} {{ r.start_clock }} → Q{{ r.end_period }} {{ r.end_clock }})
+                  </li>
+                {% endfor %}
+              {% else %}
+                <li>No 8+ net runs by either team.</li>
+              {% endif %}
+            </ul>
+          </div>
+
+          <!-- Highlight runs -->
+          <div class="quarter-block">
+            <div class="quarter-header">
+              <div class="quarter-header-left">Highlight runs (≥8 pts, opponent ≤5)</div>
+              <div class="quarter-header-right">
+                “Start at each scoring play” logic: best run per start.
+              </div>
+            </div>
+            <ul class="downloads-list">
+              {% if highlight %}
+                {% for r in highlight %}
+                  {% set side = r.side %}
+                  {% set team = data.teams[side] %}
+                  <li>
+                    {{ team.tricode }}:
+                    {{ r.points_for }}–{{ r.points_against }}
+                    (net {{ r.net_points }})
+                    – Q{{ r.start_period }} {{ r.start_clock }} → Q{{ r.end_period }} {{ r.end_clock }}
+                  </li>
+                {% endfor %}
+              {% else %}
+                <li>No highlight runs meeting the thresholds.</li>
+              {% endif %}
+            </ul>
+          </div>
+        </div>
+      </section>
+
+      <!-- Team traditional totals + misc scoring -->
+      <section class="card">
+        <div class="section-label">Team Stats</div>
+        <h2>Full Game – Traditional Team Totals</h2>
+        {% set home_trad = data.game_totals.traditional.home %}
+        {% set away_trad = data.game_totals.traditional.away %}
+        {% set misc = data.game_totals.misc if data.game_totals.misc is defined else {} %}
+        {% set misc_home = misc.home if misc.home is defined else {} %}
+        {% set misc_away = misc.away if misc.away is defined else {} %}
+
+        <table>
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th>FG</th>
+              <th>3P</th>
+              <th>FT</th>
+              <th>REB</th>
+              <th>AST</th>
+              <th>STL</th>
+              <th>BLK</th>
+              <th>TOV</th>
+              <th>PF</th>
+              <th>PTS</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Away first, home second -->
+            <tr>
+              <td class="team-name-cell">{{ data.teams.away.tricode }}</td>
+              <td>{{ away_trad.fg }}/{{ away_trad.fga }}</td>
+              <td>{{ away_trad.fg3 }}/{{ away_trad.fg3a }}</td>
+              <td>{{ away_trad.ft }}/{{ away_trad.fta }}</td>
+              <td>{{ away_trad.trb }}</td>
+              <td>{{ away_trad.ast }}</td>
+              <td>{{ away_trad.stl }}</td>
+              <td>{{ away_trad.blk }}</td>
+              <td>{{ away_trad.tov }}</td>
+              <td>{{ away_trad.pf }}</td>
+              <td>{{ away_trad.pts }}</td>
+            </tr>
+            <tr>
+              <td class="team-name-cell">{{ data.teams.home.tricode }}</td>
+              <td>{{ home_trad.fg }}/{{ home_trad.fga }}</td>
+              <td>{{ home_trad.fg3 }}/{{ home_trad.fg3a }}</td>
+              <td>{{ home_trad.ft }}/{{ home_trad.fta }}</td>
+              <td>{{ home_trad.trb }}</td>
+              <td>{{ home_trad.ast }}</td>
+              <td>{{ home_trad.stl }}</td>
+              <td>{{ home_trad.blk }}</td>
+              <td>{{ home_trad.tov }}</td>
+              <td>{{ home_trad.pf }}</td>
+              <td>{{ home_trad.pts }}</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Team Misc Stats</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th>Points in the Paint</th>
+              <th>Points off Turnovers</th>
+              <th>Fast Break Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="team-name-cell">{{ data.teams.away.tricode }}</td>
+              <td>{{ misc_away.pitp if misc_away.pitp is defined else 0 }}</td>
+              <td>{{ misc_away.points_off_to if misc_away.points_off_to is defined else 0 }}</td>
+              <td>{{ misc_away.fast_break if misc_away.fast_break is defined else 0 }}</td>
+            </tr>
+            <tr>
+              <td class="team-name-cell">{{ data.teams.home.tricode }}</td>
+              <td>{{ misc_home.pitp if misc_home.pitp is defined else 0 }}</td>
+              <td>{{ misc_home.points_off_to if misc_home.points_off_to is defined else 0 }}</td>
+              <td>{{ misc_home.fast_break if misc_home.fast_break is defined else 0 }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Leaders -->
+      <section class="card">
+        <div class="section-label">Leaders</div>
+        <h2>Team Leaders – Traditional</h2>
+
+        <!-- Away first -->
+        <div>
+          <h3>{{ data.teams.away.full_name }}</h3>
+          {% set away_leaders = data.leaders.away %}
+          <div>
+            <div class="leaders-chip">
+              <span class="label">PTS</span>
+              {{ away_leaders.points.value }} – {{ away_leaders.points.players | join(", ") }}
+            </div>
+            <div class="leaders-chip">
+              <span class="label">REB</span>
+              {{ away_leaders.rebounds.value }} – {{ away_leaders.rebounds.rebounds | default(away_leaders.rebounds.players) | join(", ") }}
+            </div>
+            <div class="leaders-chip">
+              <span class="label">AST</span>
+              {{ away_leaders.assists.value }} – {{ away_leaders.assists.players | join(", ") }}
+            </div>
+            <div class="leaders-chip">
+              <span class="label">STL</span>
+              {{ away_leaders.steals.value }} – {{ away_leaders.steals.players | join(", ") }}
+            </div>
+            <div class="leaders-chip">
+              <span class="label">BLK</span>
+              {{ away_leaders.blocks.value }} – {{ away_leaders.blocks.players | join(", ") }}
+            </div>
+          </div>
+        </div>
+
+        <!-- Home second -->
+        <div style="margin-top: 8px;">
+          <h3>{{ data.teams.home.full_name }}</h3>
+          {% set home_leaders = data.leaders.home %}
+          <div>
+            <div class="leaders-chip">
+              <span class="label">PTS</span>
+              {{ home_leaders.points.value }} – {{ home_leaders.points.players | join(", ") }}
+            </div>
+            <div class="leaders-chip">
+              <span class="label">REB</span>
+              {{ home_leaders.rebounds.value }} – {{ home_leaders.rebounds.players | join(", ") }}
+            </div>
+            <div class="leaders-chip">
+              <span class="label">AST</span>
+              {{ home_leaders.assists.value }} – {{ home_leaders.assists.players | join(", ") }}
+            </div>
+            <div class="leaders-chip">
+              <span class="label">STL</span>
+              {{ home_leaders.steals.value }} – {{ home_leaders.steals.players | join(", ") }}
+            </div>
+            <div class="leaders-chip">
+              <span class="label">BLK</span>
+              {{ home_leaders.blocks.value }} – {{ home_leaders.blocks.players | join(", ") }}
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Full game player box scores (traditional only) -->
+      <section class="card">
+        <div class="section-label">Full Game Box Score</div>
+        <h2>Traditional – Players</h2>
+
+        {% for side in ["away", "home"] %}
+          {% set team = data.teams[side] %}
+          {% set players = data.players[side] %}
+          <h3>{{ team.full_name }} ({{ team.tricode }})</h3>
+          <table class="player-table">
+            <colgroup>
+              <col class="col-player">
+              <col class="col-min">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>MIN</th>
+                <th>FG</th>
+                <th>3P</th>
+                <th>FT</th>
+                <th>REB</th>
+                <th>AST</th>
+                <th>STL</th>
+                <th>BLK</th>
+                <th>TOV</th>
+                <th>PF</th>
+                <th>PTS</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% set team_totals = {
+                "min": "",
+                "fg": 0,
+                "fga": 0,
+                "fg3": 0,
+                "fg3a": 0,
+                "ft": 0,
+                "fta": 0,
+                "trb": 0,
+                "ast": 0,
+                "stl": 0,
+                "blk": 0,
+                "tov": 0,
+                "pf": 0,
+                "pts": 0
+              } %}
+
+              {% for p in players %}
+                {% set stats = p.traditional if p.traditional is defined and p.traditional is mapping else p %}
+                <tr>
+                  <td class="team-name-cell">{{ p.name }}</td>
+                  <td>{{ p.min }}</td>
+                  <td>{{ stats.fg }}/{{ stats.fga }}</td>
+                  <td>{{ stats.fg3 }}/{{ stats.fg3a }}</td>
+                  <td>{{ stats.ft }}/{{ stats.fta }}</td>
+                  <td>{{ stats.trb }}</td>
+                  <td>{{ stats.ast }}</td>
+                  <td>{{ stats.stl }}</td>
+                  <td>{{ stats.blk }}</td>
+                  <td>{{ stats.tov }}</td>
+                  <td>{{ stats.pf }}</td>
+                  <td>{{ stats.pts }}</td>
+                </tr>
+                {% set _ = team_totals.update({
+                  "fg": team_totals.fg + (stats.fg or 0),
+                  "fga": team_totals.fga + (stats.fga or 0),
+                  "fg3": team_totals.fg3 + (stats.fg3 or 0),
+                  "fg3a": team_totals.fg3a + (stats.fg3a or 0),
+                  "ft": team_totals.ft + (stats.ft or 0),
+                  "fta": team_totals.fta + (stats.fta or 0),
+                  "trb": team_totals.trb + (stats.trb or 0),
+                  "ast": team_totals.ast + (stats.ast or 0),
+                  "stl": team_totals.stl + (stats.stl or 0),
+                  "blk": team_totals.blk + (stats.blk or 0),
+                  "tov": team_totals.tov + (stats.tov or 0),
+                  "pf": team_totals.pf + (stats.pf or 0),
+                  "pts": team_totals.pts + (stats.pts or 0)
+                }) %}
+              {% endfor %}
+
+              <tr class="totals-row">
+                <td class="team-name-cell">Team Totals</td>
+                <td></td>
+                <td>{{ team_totals.fg }}/{{ team_totals.fga }}</td>
+                <td>{{ team_totals.fg3 }}/{{ team_totals.fg3a }}</td>
+                <td>{{ team_totals.ft }}/{{ team_totals.fta }}</td>
+                <td>{{ team_totals.trb }}</td>
+                <td>{{ team_totals.ast }}</td>
+                <td>{{ team_totals.stl }}</td>
+                <td>{{ team_totals.blk }}</td>
+                <td>{{ team_totals.tov }}</td>
+                <td>{{ team_totals.pf }}</td>
+                <td>{{ team_totals.pts }}</td>
+              </tr>
+            </tbody>
+          </table>
+        {% endfor %}
+      </section>
+
+      <!-- Quarter-by-quarter traditional (team + players) from ESPN summary analysis -->
+      <section class="card">
+        <div class="section-label">Quarter by Quarter</div>
+        <h2>Traditional – Team & Players (by quarter)</h2>
+
+        {% set qr = data.quarters_and_runs %}
+        {% set q_team_totals = qr.quarter_team_totals %}
+        {% set q_player_totals = qr.quarter_player_totals %}
+
+        <div class="quarters-wrapper">
+          {% set quarter_numbers = q_team_totals.keys() | list %}
+          {% set quarter_numbers = quarter_numbers | map('int') | list | sort %}
+
+          {% for qnum in quarter_numbers %}
+            {% set q_key = qnum|string %}
+            {% set q_team = q_team_totals[q_key] %}
+            {% set q_players = q_player_totals[q_key] if q_player_totals[q_key] is defined else {} %}
+
+            <div class="quarter-block">
+              <div class="quarter-header">
+                <div class="quarter-header-left">Quarter {{ qnum }}</div>
+                <div class="quarter-header-right">
+                  Score: {{ data.teams.away.tricode }} {{ q_team.away.pts }} – {{ q_team.home.pts }} {{ data.teams.home.tricode }}
+                </div>
+              </div>
+
+              {% for side in ["away", "home"] %}
+                {% set team = data.teams[side] %}
+                {% set tt = q_team[side] %}
+
+                <div class="quarter-card">
+                  <div class="quarter-team-label">
+                    {{ team.full_name }} ({{ team.tricode }}) – Players (Q{{ qnum }})
+                  </div>
+                  <table class="player-table">
+                    <colgroup>
+                      <col class="col-player">
+                      <col class="col-stat">
+                      <col class="col-stat">
+                      <col class="col-stat">
+                      <col class="col-stat">
+                      <col class="col-stat">
+                      <col class="col-stat">
+                      <col class="col-stat">
+                      <col class="col-stat">
+                      <col class="col-stat">
+                    </colgroup>
+                    <thead>
+                      <tr>
+                        <th>Player</th>
+                        <th>FG</th>
+                        <th>3P</th>
+                        <th>FT</th>
+                        <th>REB</th>
+                        <th>AST</th>
+                        <th>STL</th>
+                        <th>BLK</th>
+                        <th>TOV</th>
+                        <th>PTS</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {% for pid, p in q_players.items() if p.side == side %}
+                        <tr>
+                          <td class="team-name-cell">{{ p.name }}</td>
+                          <td>{{ p.fgm }}/{{ p.fga }}</td>
+                          <td>{{ p.tpm }}/{{ p.tpa }}</td>
+                          <td>{{ p.ftm }}/{{ p.fta }}</td>
+                          <td>{{ p.reb }} ({{ p.oreb }}/{{ p.dreb }})</td>
+                          <td>{{ p.ast }}</td>
+                          <td>{{ p.stl }}</td>
+                          <td>{{ p.blk }}</td>
+                          <td>{{ p.tov }}</td>
+                          <td>{{ p.pts }}</td>
+                        </tr>
+                      {% endfor %}
+
+                      <tr class="totals-row">
+                        <td class="team-name-cell">Team Totals</td>
+                        <td>{{ tt.fgm }}/{{ tt.fga }}</td>
+                        <td>{{ tt.tpm }}/{{ tt.tpa }}</td>
+                        <td>{{ tt.ftm }}/{{ tt.fta }}</td>
+                        <td>{{ tt.reb }} ({{ tt.oreb }}/{{ tt.dreb }})</td>
+                        <td>{{ tt.ast }}</td>
+                        <td>{{ tt.stl }}</td>
+                        <td>{{ tt.blk }}</td>
+                        <td>{{ tt.tov }}</td>
+                        <td>{{ tt.pts }}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+              {% endfor %}
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+
+      {% if data.files %}
+      <!-- Downloads section -->
+      <section class="card">
+        <div class="section-label">Downloads</div>
+        <h2>Play-by-Play & Data Files</h2>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">
+          Links below assume the underlying CSV / JSON / other files are deployed alongside this report.
+        </p>
+        <ul class="downloads-list">
+          {% for key, path in data.files.items() %}
+            <li>
+              <a href="{{ path }}">{{ key|replace("_", " ")|title }}</a>
+            </li>
+          {% endfor %}
+        </ul>
+      </section>
+      {% endif %}
+    </main>
+  </div>
+</body>
+</html>
