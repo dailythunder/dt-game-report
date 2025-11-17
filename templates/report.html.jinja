@@ -718,11 +718,9 @@
         {% set q_player_totals = qr.quarter_player_totals %}
 
         <div class="quarters-wrapper">
-          {% set quarter_numbers = q_team_totals.keys() | list %}
-          {% set quarter_numbers = quarter_numbers | map('int') | list | sort %}
-
-          {% for qnum in quarter_numbers %}
-            {% set q_key = qnum|string %}
+          {% set quarter_keys = q_team_totals.keys() | list | sort %}
+          {% for q_key in quarter_keys %}
+            {% set qnum = q_key|int %}
             {% set q_team = q_team_totals[q_key] %}
             {% set q_players = q_player_totals[q_key] if q_player_totals[q_key] is defined else {} %}
 
