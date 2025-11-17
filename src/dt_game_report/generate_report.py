@@ -2,17 +2,29 @@ import argparse
 import json
 import logging
 import os
+import sys
 from datetime import datetime
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from dt_game_report.quarters_and_runs_analysis import analyze_quarters_and_runs
-
 
 LOG = logging.getLogger("dt_game_report.generate_report")
 
+# Ensure we can import dt_game_report when running this file directly
+THIS_DIR = Path(__file__).resolve().parent
+PARENT_DIR = THIS_DIR.parent  # .../src
+if str(PARENT_DIR) not in sys.path:
+    sys.path.insert(0, str(PARENT_DIR))
+
+from dt_game_report.quarters_and_runs_analysis import analyze_quarters_and_runs
+
 REPO_ROOT = Path(__file__).resolve().parents[2]
+FIXTURES_DIR = REPO_ROOT / "fixtures"
+TEMPLATES_DIR = REPO_ROOT / "templates"
+SITE_DIR = REPO_ROOT / "site"
+
+
 FIXTURES_DIR = REPO_ROOT / "fixtures"
 TEMPLATES_DIR = REPO_ROOT / "templates"
 SITE_DIR = REPO_ROOT / "site"
