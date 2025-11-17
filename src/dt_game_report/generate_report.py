@@ -8,10 +8,19 @@ from typing import Any, Dict, List, Optional
 
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 
-from .quarters_and_runs_analysis import analyze_quarters_and_runs
-from .quarters_and_runs_html_integration import (
-    augment_report_context_with_quarters_and_runs,
-)
+try:
+    # When run as a package: python -m dt_game_report.generate_report
+    from .quarters_and_runs_analysis import analyze_quarters_and_runs
+    from .quarters_and_runs_html_integration import (
+        augment_report_context_with_quarters_and_runs,
+    )
+except ImportError:
+    # When run as a script: python src/dt_game_report/generate_report.py
+    from quarters_and_runs_analysis import analyze_quarters_and_runs
+    from quarters_and_runs_html_integration import (
+        augment_report_context_with_quarters_and_runs,
+    )
+
 
 LOG = logging.getLogger("dt_game_report.generate_report")
 
