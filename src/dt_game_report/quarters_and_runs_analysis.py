@@ -504,6 +504,8 @@ def compute_unanswered_runs(
                     "start_clock": start_play.get("clock"),
                     "end_period": last_play.get("period"),
                     "end_clock": last_play.get("clock"),
+                    "end_home_score": last_play.get("home_score"),
+                    "end_away_score": last_play.get("away_score"),
                 }
             )
         current_side = None
@@ -571,6 +573,8 @@ def compute_net_runs(
                     "start_clock": start_play.get("clock"),
                     "end_period": final_play.get("period"),
                     "end_clock": final_play.get("clock"),
+                    "end_home_score": final_play.get("home_score"),
+                    "end_away_score": final_play.get("away_score"),
                 }
             )
         current_side = None
@@ -685,6 +689,8 @@ def compute_highlight_runs(
                     "start_clock": start_ev.get("clock"),
                     "end_period": best_end_ev.get("period"),
                     "end_clock": best_end_ev.get("clock"),
+                    "end_home_score": best_end_ev.get("home_score"),
+                    "end_away_score": best_end_ev.get("away_score"),
                 }
             )
 
