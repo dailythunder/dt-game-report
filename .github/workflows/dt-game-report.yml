@@ -16,6 +16,13 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
+      - name: Checkout existing site (gh-pages)
+        uses: actions/checkout@v4
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: existing_site
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
@@ -28,20 +35,24 @@ jobs:
 
       - name: Fetch ESPN data (summary + play-by-play)
         env:
-          GAME_ID: ${{ github.event.inputs.game_id }}
+          INPUT_GAME_ID: ${{ github.event.inputs.game_id }}
         run: |
-          if [ -n "$GAME_ID" ]; then
+          if [ -n "$INPUT_GAME_ID" ]; then
+            GAME_ID="$INPUT_GAME_ID"
             echo "Using explicit ESPN game id: $GAME_ID"
             python src/dt_game_report/fetch_espn_data.py --game-id "$GAME_ID"
           else
             echo "No game id provided; fetching latest completed OKC game from ESPN"
-            python src/dt_game_report/fetch_espn_data.py
+            GAME_ID=$(python src/dt_game_report/fetch_espn_data.py --print-game-id)
           fi
+          echo "GAME_ID=$GAME_ID" >> "$GITHUB_ENV"
 
       - name: Generate HTML report
-        env:
-          GAME_ID: ${{ github.event.inputs.game_id }}
         run: |
+          if [ -d "existing_site" ]; then
+            mkdir -p site
+            cp -a existing_site/. site/
+          fi
           python src/dt_game_report/generate_report.py
 
       - name: Upload Pages artifact
