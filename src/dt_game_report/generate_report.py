@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import os
+import re
 import shutil
 import sys
 from datetime import datetime
@@ -500,6 +501,44 @@ def _describe_game_from_summary(game_id: str) -> Optional[str]:
     return f"{away_str} at {home_str} (Game {game_id})"
 
 
+def _describe_game_from_report(report_file: Path) -> Optional[str]:
+    """Extract a label from an existing HTML report file."""
+    try:
+        html = report_file.read_text(encoding="utf-8")
+    except Exception:
+        return None
+
+    date_match = re.search(
+        r'<div class="subtitle">\s*([^<]+?)\s*·\s*Game ID',
+        html,
+        flags=re.IGNORECASE,
+    )
+    if not date_match:
+        return None
+    date_label = date_match.group(1).strip()
+
+    teams_match = re.search(
+        r'<div class="scoreline-teams">\s*([^<]+?)\s+vs\s+([^<]+?)\s*</div>',
+        html,
+        flags=re.IGNORECASE,
+    )
+    if not teams_match:
+        return None
+    home_full = teams_match.group(1).strip()
+    away_full = teams_match.group(2).strip()
+
+    score_match = re.search(
+        r'<div class="scoreline-main">\s*([A-Z]+)\s+(\d+)\s+–\s+(\d+)\s+([A-Z]+)\s*</div>',
+        html,
+    )
+    if not score_match:
+        return None
+    home_score = score_match.group(2)
+    away_score = score_match.group(3)
+
+    return f"{date_label} — {away_full} {away_score}, {home_full} {home_score}"
+
+
 def _build_index(report_files: List[Path]) -> None:
     """
     Build a simple index.html under SITE_DIR listing all game_*.html reports.
@@ -510,7 +549,11 @@ def _build_index(report_files: List[Path]) -> None:
     pages = []
     for html_file in report_files:
         game_id = html_file.stem.replace("game_", "")
-        label = _describe_game_from_summary(game_id) or f"Game {game_id}"
+        label = (
+            _describe_game_from_summary(game_id)
+            or _describe_game_from_report(html_file)
+            or f"Game {game_id}"
+        )
         pages.append((html_file, game_id, label))
 
     if not pages:
