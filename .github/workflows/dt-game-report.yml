@@ -15,6 +15,18 @@ jobs:
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Fetch existing site (gh-pages)
+        shell: bash
+        run: |
+          if git ls-remote --exit-code --heads origin gh-pages; then
+            git fetch origin gh-pages
+            git worktree add existing_site origin/gh-pages
+          else
+            echo "No gh-pages branch found; starting fresh."
+          fi
 
       - name: Checkout existing site (gh-pages)
         uses: actions/checkout@v4
