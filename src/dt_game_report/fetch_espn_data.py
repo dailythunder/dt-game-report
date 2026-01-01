@@ -1,6 +1,7 @@
 import argparse
 import json
 import logging
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Optional, Tuple, Dict, Any, List
 
@@ -25,8 +26,27 @@ def http_get_json(url: str, *, params: Optional[Dict[str, Any]] = None) -> Dict[
     return resp.json()
 
 
+def _parse_event_datetime(date_str: Optional[str]) -> Optional[datetime]:
+    if not date_str:
+        return None
+    try:
+        return datetime.fromisoformat(date_str.replace("Z", "+00:00"))
+    except ValueError:
+        return None
+
+
+def _event_debug_snapshot(event: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "id": event.get("id"),
+        "date": event.get("date"),
+        "name": event.get("name"),
+        "shortName": event.get("shortName"),
+        "status": event.get("status"),
+    }
+
+
 def find_latest_okc_game_id() -> str:
-    """Return the most recent *completed* Thunder game id from ESPN."""
+    """Return the most recent completed Thunder game id from ESPN."""
     # ESPN team schedule endpoint; includes past and future games
     url = "https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/teams/{team}/schedule".format(
         team=TEAM_ABBR
@@ -36,7 +56,11 @@ def find_latest_okc_game_id() -> str:
     if not events:
         raise RuntimeError("No events returned from ESPN schedule endpoint")
 
-    completed: List[Tuple[str, str]] = []
+    now = datetime.now(timezone.utc)
+    okc_events: List[Dict[str, Any]] = []
+    completed: List[Tuple[str, datetime, Dict[str, Any], bool]] = []
+    post: List[Tuple[str, datetime, Dict[str, Any], bool]] = []
+    past: List[Tuple[str, datetime, Dict[str, Any], bool]] = []
     for ev in events:
         # game id
         game_id = ev.get("id")
@@ -48,23 +72,71 @@ def find_latest_okc_game_id() -> str:
         if not game_id:
             continue
 
-        status = ev.get("status", {})
-        stype = status.get("type", {})
-        if not stype.get("completed"):
+        competitions = ev.get("competitions", [])
+        if not competitions:
+            continue
+        comp = competitions[0]
+        competitors = comp.get("competitors", [])
+        if not competitors:
+            continue
+        has_okc = any(
+            c.get("team", {}).get("abbreviation") == "OKC"
+            or c.get("team", {}).get("id") == TEAM_ESPN_ID
+            for c in competitors
+        )
+        if not has_okc:
             continue
 
-        date_str = ev.get("date")
-        if not date_str:
+        okc_events.append(ev)
+        event_time = _parse_event_datetime(comp.get("date") or ev.get("date"))
+        if not event_time:
             continue
-        completed.append((game_id, date_str))
+        status_type = comp.get("status", {}).get("type", {}) or {}
+        completed_flag = status_type.get("completed") is True
+        state = str(status_type.get("state", "")).lower()
+        is_post = state == "post"
+        boxscore_available = comp.get("boxscoreAvailable") is True
 
-    if not completed:
-        raise RuntimeError("No completed Thunder games found in schedule data")
+        if completed_flag:
+            completed.append((game_id, event_time, status_type, boxscore_available))
+        elif is_post:
+            post.append((game_id, event_time, status_type, boxscore_available))
+        if event_time <= now:
+            past.append((game_id, event_time, status_type, boxscore_available))
 
-    # sort by date string (ISO-8601) descending
-    completed.sort(key=lambda tup: tup[1], reverse=True)
-    latest_id, latest_date = completed[0]
-    LOG.info("Latest completed OKC game from ESPN schedule: %s (date=%s)", latest_id, latest_date)
+    def _pick_latest(
+        candidates: List[Tuple[str, datetime, Dict[str, Any], bool]]
+    ) -> Optional[Tuple[str, datetime, Dict[str, Any]]]:
+        if not candidates:
+            return None
+        with_boxscore = [c for c in candidates if c[3]]
+        pool = with_boxscore or candidates
+        pool.sort(key=lambda item: item[1], reverse=True)
+        game_id, event_time, status_type, _boxscore = pool[0]
+        return game_id, event_time, status_type
+
+    chosen = _pick_latest(completed) or _pick_latest(post) or _pick_latest(past)
+
+    if not chosen:
+        LOG.error(
+            "No eligible Thunder games found. total_events=%s okc_events=%s",
+            len(events),
+            len(okc_events),
+        )
+        sample = [_event_debug_snapshot(ev) for ev in events[:5]]
+        LOG.error("Sample schedule events: %s", sample)
+        raise RuntimeError("No Thunder games found in schedule data")
+
+    latest_id, latest_time, status_type = chosen
+    LOG.info(
+        "Schedule scan: total_events=%s okc_events=%s completed=%s chosen_id=%s chosen_date=%s chosen_status=%s",
+        len(events),
+        len(okc_events),
+        len(completed),
+        latest_id,
+        latest_time,
+        status_type,
+    )
     return latest_id
 
 
@@ -190,10 +262,17 @@ def main(argv: Optional[list] = None) -> None:
         dest="game_id",
         help="ESPN game id (e.g. 401810077). If omitted, uses the last completed OKC game.",
     )
+    parser.add_argument(
+        "--print-game-id",
+        action="store_true",
+        help="Print the game id used to stdout.",
+    )
     args = parser.parse_args(argv)
 
     used_id = fetch_and_cache(args.game_id)
     LOG.info("Done. Cached data for game id %s in %s", used_id, FIXTURES_DIR)
+    if args.print_game_id:
+        print(used_id)
 
 
 if __name__ == "__main__":
