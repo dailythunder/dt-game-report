@@ -2,6 +2,7 @@ import argparse
 import json
 import logging
 import os
+import shutil
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -23,6 +24,7 @@ REPO_ROOT = Path(__file__).resolve().parents[2]
 FIXTURES_DIR = REPO_ROOT / "fixtures"
 TEMPLATES_DIR = REPO_ROOT / "templates"
 SITE_DIR = REPO_ROOT / "site"
+REPORTS_DIR = REPO_ROOT / "reports"
 
 
 FIXTURES_DIR = REPO_ROOT / "fixtures"
@@ -498,7 +500,7 @@ def _describe_game_from_summary(game_id: str) -> Optional[str]:
     return f"{away_str} at {home_str} (Game {game_id})"
 
 
-def _build_index() -> None:
+def _build_index(report_files: List[Path]) -> None:
     """
     Build a simple index.html under SITE_DIR listing all game_*.html reports.
 
@@ -506,7 +508,7 @@ def _build_index() -> None:
     """
     SITE_DIR.mkdir(parents=True, exist_ok=True)
     pages = []
-    for html_file in SITE_DIR.glob("game_*.html"):
+    for html_file in report_files:
         game_id = html_file.stem.replace("game_", "")
         label = _describe_game_from_summary(game_id) or f"Game {game_id}"
         pages.append((html_file, game_id, label))
@@ -553,6 +555,12 @@ def _build_index() -> None:
     LOG.info("Wrote index.html listing %d game reports", len(pages))
 
 
+def _sync_reports_to_site(report_files: List[Path]) -> None:
+    SITE_DIR.mkdir(parents=True, exist_ok=True)
+    for report_file in report_files:
+        shutil.copy2(report_file, SITE_DIR / report_file.name)
+
+
 def main(argv: Optional[list] = None) -> None:
     logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
     parser = argparse.ArgumentParser(
@@ -578,14 +586,15 @@ def main(argv: Optional[list] = None) -> None:
     data = build_data(game_id)
     html = render_report(data)
 
-    SITE_DIR.mkdir(parents=True, exist_ok=True)
-    out_path = SITE_DIR / f"game_{game_id}.html"
+    REPORTS_DIR.mkdir(parents=True, exist_ok=True)
+    out_path = REPORTS_DIR / f"game_{game_id}.html"
     with out_path.open("w", encoding="utf-8") as f:
         f.write(html)
     LOG.info("Wrote HTML report: %s", out_path)
 
-    # Rebuild master index after writing report
-    _build_index()
+    report_files = sorted(REPORTS_DIR.glob("game_*.html"))
+    _sync_reports_to_site(report_files)
+    _build_index(report_files)
 
 
 if __name__ == "__main__":
