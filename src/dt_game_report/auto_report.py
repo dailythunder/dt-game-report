@@ -6,7 +6,7 @@ from email.message import EmailMessage
 from pathlib import Path
 from typing import Iterable, Optional
 
-from dt_game_report.fetch_espn_data import fetch_and_cache
+from dt_game_report.fetch_espn_data import FIXTURES_DIR, fetch_and_cache
 from dt_game_report.generate_report import (
     REPORTS_DIR,
     SITE_DIR,
@@ -101,7 +101,7 @@ def run(
 
     used_game_id = fetch_and_cache(game_id)
     html_path = _write_report_html(used_game_id)
-    json_path = Path("fixtures") / f"espn_summary_{used_game_id}.json"
+    json_path = FIXTURES_DIR / f"espn_summary_{used_game_id}.json"
 
     if not json_path.exists():
         raise SystemExit(f"Could not find summary JSON at {json_path}")
