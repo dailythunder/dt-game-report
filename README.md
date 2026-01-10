@@ -28,3 +28,23 @@ This will:
 - read `fixtures/example_game.json`
 - render `templates/report.html.jinja` to `site/index.html`
 - copy `fixtures/play_by_play.csv` to `output/play_by_play.csv`
+
+## Automated email delivery (Gmail)
+
+You can fetch the latest completed game, generate the HTML report, and email both
+the report + ESPN summary JSON using the Gmail SMTP server. This requires a Gmail
+App Password (recommended; do not use your main account password).
+
+```bash
+export GMAIL_USER="you@gmail.com"
+export GMAIL_APP_PASSWORD="your_app_password"
+export EMAIL_TO="you@gmail.com"
+
+python -m dt_game_report.auto_report
+```
+
+Optional flags:
+
+```bash
+python -m dt_game_report.auto_report --to "you@gmail.com,friend@example.com" --subject "OKC Recap"
+```
