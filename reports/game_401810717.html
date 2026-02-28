@@ -1,0 +1,4401 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Daily Thunder Game Report - 401810717</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <style>
+    :root {
+      /* Thunder-ish palette */
+      --okc-blue: #007ac1;
+      --okc-blue-dark: #005a9c;
+      --okc-orange: #f25c19;
+      --bg: #e4ecf6;
+      --card-bg: #ffffff;
+      --text-main: #111111;
+      --text-muted: #555555;
+      --border-subtle: #d0d7e2;
+      --win-tint: #e8f5e9;
+      --win-border: #66bb6a;
+      --standout-gold: #ffd700;
+      --standout-silver: #c0c0c0;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background-color: var(--bg);
+      color: var(--text-main);
+    }
+
+    .page {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 24px 16px 40px;
+    }
+
+    .header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      gap: 16px;
+    }
+
+    .header-left {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .matchup-line {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .team-logo img {
+      height: 48px;
+      width: auto;
+      display: block;
+    }
+
+    .vs-separator {
+      font-size: 28px;
+      font-weight: 700;
+      color: var(--text-main);
+      padding: 0 8px;
+    }
+
+    .team-name-with-logo {
+      font-size: 28px;
+      font-weight: 800;
+      color: var(--okc-blue-dark);
+    }
+
+    .brand {
+      font-size: 14px;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--okc-blue-dark);
+      font-weight: 600;
+    }
+
+    .subtitle {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .scoreline {
+      text-align: right;
+    }
+
+    .scoreline-main {
+      font-size: 22px;
+      font-weight: 700;
+      color: var(--okc-orange);
+    }
+
+    .scoreline-teams {
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .pill-row {
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      margin-bottom: 16px;
+    }
+
+    .pill {
+      padding: 4px 10px;
+      border-radius: 999px;
+      background-color: #d1e5f8;
+      color: var(--okc-blue-dark);
+      font-size: 12px;
+      font-weight: 600;
+      border: 1px solid var(--okc-blue-dark);
+    }
+
+    .layout {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .card {
+      background-color: var(--card-bg);
+      border-radius: 12px;
+      padding: 16px;
+      box-shadow: 0 3px 8px rgba(0, 0, 0, 0.08);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .card h2 {
+      font-size: 18px;
+      margin: 0 0 8px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .card h3 {
+      font-size: 16px;
+      margin: 16px 0 8px;
+    }
+
+    .section-label {
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-bottom: 4px;
+      font-weight: 600;
+    }
+
+    /* Game Summary Styles */
+    .summary-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 8px;
+    }
+
+    .summary-box {
+      padding: 12px;
+      background-color: #f8f9fc;
+      border-radius: 8px;
+      border: 1px solid var(--border-subtle);
+    }
+
+    .summary-box h4 {
+      margin: 0 0 8px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+
+    .summary-box p {
+      margin: 4px 0;
+      font-size: 14px;
+      line-height: 1.5;
+    }
+
+    .summary-highlight {
+      font-weight: 700;
+      color: var(--okc-blue-dark);
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      table-layout: fixed;
+    }
+
+    /* Sticky headers for better scrolling */
+    .player-table-wrapper {
+      width: 100%;
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin-top: 4px;
+      position: relative;
+    }
+
+    table.player-table {
+      width: auto;
+      min-width: 950px;
+      table-layout: auto;
+      font-size: 13px;
+    }
+
+    table.player-table th,
+    table.player-table td {
+      white-space: nowrap;
+    }
+
+    table.player-table thead {
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+
+    /* Runs table styling */
+    table.runs-table {
+      width: 100%;
+      table-layout: auto;
+      font-size: 13px;
+    }
+
+    table.runs-table th,
+    table.runs-table td {
+      white-space: nowrap;
+    }
+
+    th, td {
+      padding: 4px 6px;
+      text-align: right;
+      border-bottom: 1px solid #e2e6f0;
+      white-space: nowrap;
+    }
+
+    th:first-child,
+    td:first-child {
+      text-align: left;
+    }
+
+    thead tr {
+      background-color: #dbe6f7;
+    }
+
+    tbody tr:nth-child(even) {
+      background-color: #f7f9fc;
+    }
+
+    .team-name-cell {
+      font-weight: 600;
+    }
+
+    .totals-row {
+      font-weight: 700;
+      background-color: #e3edff;
+    }
+
+    /* Winning team highlighting */
+    .winner-row {
+      background-color: var(--win-tint) !important;
+      border-left: 3px solid var(--win-border);
+    }
+
+    /* Highlight PTS column */
+    .pts-highlight {
+      background-color: #fff3e6;
+      font-weight: 700;
+      color: var(--okc-orange);
+    }
+
+    th.pts-highlight {
+      background-color: #ffe0cc;
+    }
+
+    /* Standout performance indicators */
+    .standout-stat {
+      position: relative;
+    }
+
+    .standout-stat::after {
+      content: "⭐";
+      font-size: 10px;
+      margin-left: 2px;
+      vertical-align: super;
+    }
+
+    .double-double::before {
+      content: "🔥";
+      font-size: 10px;
+      margin-right: 2px;
+    }
+
+    .leaders-chip {
+      display: inline-flex;
+      padding: 2px 8px;
+      border-radius: 999px;
+      background-color: #f4f6ff;
+      border: 1px solid #d6ddff;
+      font-size: 12px;
+      margin-right: 6px;
+      margin-bottom: 4px;
+    }
+
+    .leaders-chip span.label {
+      font-weight: 600;
+      margin-right: 4px;
+      color: var(--okc-blue-dark);
+    }
+
+    /* Beautiful leader cards */
+    .leaders-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 12px;
+      margin-top: 12px;
+    }
+
+    .leader-card {
+      background: linear-gradient(135deg, #f8f9fc 0%, #ffffff 100%);
+      border-radius: 10px;
+      padding: 14px;
+      border: 2px solid var(--border-subtle);
+      transition: all 0.2s ease;
+    }
+
+    .leader-card:hover {
+      border-color: var(--okc-blue);
+      box-shadow: 0 4px 12px rgba(0, 122, 193, 0.15);
+      transform: translateY(-2px);
+    }
+
+    .leader-stat-name {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-muted);
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .leader-stat-icon {
+      font-size: 16px;
+    }
+
+    .leader-team-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+      padding: 6px 0;
+      border-bottom: 1px solid #e8ecf4;
+    }
+
+    .leader-team-row:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .leader-team-name {
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--okc-blue-dark);
+    }
+
+    .leader-team-value {
+      font-size: 20px;
+      font-weight: 800;
+      color: var(--okc-orange);
+      margin-right: 8px;
+    }
+
+    .leader-player-name {
+      font-size: 13px;
+      color: var(--text-main);
+      display: block;
+      margin-top: 2px;
+    }
+
+    .quarters-wrapper {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .quarter-block {
+      background-color: #ffffff;
+      border-radius: 10px;
+      padding: 10px 12px 14px;
+      box-shadow: 0 2px 6px rgba(0, 0, 0, 0.06);
+      border: 1px solid var(--border-subtle);
+    }
+
+    .quarter-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: baseline;
+      margin-bottom: 8px;
+      gap: 8px;
+    }
+
+    .quarter-header-left {
+      font-weight: 700;
+      font-size: 14px;
+      color: var(--okc-blue-dark);
+    }
+
+    .quarter-header-right {
+      font-size: 12px;
+      color: var(--text-muted);
+    }
+
+    /* Collapsible quarter sections */
+    .collapsible-header {
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .collapsible-header:hover {
+      opacity: 0.8;
+    }
+
+    .toggle-icon {
+      display: inline-block;
+      width: 0;
+      height: 0;
+      border-left: 5px solid transparent;
+      border-right: 5px solid transparent;
+      border-top: 7px solid var(--okc-blue-dark);
+      transition: transform 0.2s ease;
+    }
+
+    .toggle-icon.collapsed {
+      transform: rotate(-90deg);
+    }
+
+    .collapsible-content {
+      max-height: 5000px;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+    }
+
+    .collapsible-content.collapsed {
+      max-height: 0;
+    }
+
+    .quarter-card {
+      margin-top: 8px;
+    }
+
+    .quarter-team-label {
+      font-weight: 600;
+      font-size: 13px;
+      margin-top: 6px;
+      margin-bottom: 4px;
+      color: var(--okc-blue-dark);
+    }
+
+    .score-by-quarter-table th,
+    .score-by-quarter-table td {
+      text-align: center;
+    }
+
+    .score-by-quarter-table th:first-child,
+    .score-by-quarter-table td:first-child {
+      text-align: left;
+    }
+
+    /* Column widths for player tables */
+    .player-table col.col-player {
+      width: 30%;
+    }
+    .player-table col.col-min {
+      width: 8%;
+    }
+    .player-table col.col-stat {
+      width: 6%;
+    }
+
+    .downloads-list {
+      list-style: none;
+      padding-left: 0;
+      margin: 4px 0 0;
+    }
+
+    .downloads-list li {
+      margin-bottom: 4px;
+      font-size: 13px;
+    }
+
+    .downloads-list a {
+      color: var(--okc-blue-dark);
+      text-decoration: none;
+      border-bottom: 1px dotted var(--okc-blue-dark);
+    }
+
+    .downloads-list a:hover {
+      color: var(--okc-orange);
+      border-bottom-color: var(--okc-orange);
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 20px;
+      color: var(--text-muted);
+      font-style: italic;
+    }
+
+    /* Tablet optimizations */
+    @media (max-width: 1024px) and (min-width: 769px) {
+      .leaders-grid {
+        grid-template-columns: repeat(2, 1fr);
+      }
+    }
+
+    /* Mobile optimizations */
+    @media (max-width: 768px) {
+      .header {
+        flex-direction: column;
+        align-items: flex-start;
+      }
+
+      .scoreline {
+        text-align: left;
+      }
+
+      .matchup-line {
+        flex-wrap: wrap;
+      }
+
+      .team-logo img {
+        height: 36px;
+      }
+
+      .team-name-with-logo {
+        font-size: 20px;
+      }
+
+      .vs-separator {
+        font-size: 20px;
+      }
+
+      th, td {
+        font-size: 11px;
+        padding: 3px 4px;
+      }
+
+      .summary-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Leaders grid responsive */
+      .leaders-grid {
+        grid-template-columns: 1fr;
+      }
+
+      /* Stack team stats vertically on small screens */
+      .team-stats-mobile {
+        display: block;
+      }
+
+      .team-stats-mobile table {
+        margin-bottom: 16px;
+      }
+
+      /* Make player tables easier to scroll on mobile */
+      .player-table-wrapper {
+        border: 1px solid var(--border-subtle);
+        border-radius: 6px;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .page {
+        padding: 16px 8px 32px;
+      }
+
+      .card {
+        padding: 12px;
+      }
+
+      .matchup-line {
+        gap: 6px;
+      }
+
+      .team-logo img {
+        height: 28px;
+      }
+
+      .team-name-with-logo {
+        font-size: 18px;
+      }
+
+      .vs-separator {
+        font-size: 18px;
+        padding: 0 4px;
+      }
+    }
+
+    /* Print styles */
+    @media print {
+      body {
+        background-color: white;
+      }
+
+      .page {
+        max-width: 100%;
+      }
+
+      .card {
+        box-shadow: none;
+        page-break-inside: avoid;
+      }
+
+      .collapsible-content.collapsed {
+        max-height: none !important;
+      }
+
+      .toggle-icon {
+        display: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <header class="header">
+      <div class="header-left">
+        <div class="brand">Daily Thunder Game Report</div>
+        <div class="matchup-line">
+          <div class="team-logo">
+            <img src="https://a.espncdn.com/i/teamlogos/nba/500/okc.png" alt="Oklahoma City Thunder logo">
+          </div>
+          <span class="team-name-with-logo">OKC</span>
+          <span class="vs-separator">vs</span>
+          <span class="team-name-with-logo">DEN</span>
+          <div class="team-logo">
+            <img src="https://a.espncdn.com/i/teamlogos/nba/500/den.png" alt="Denver Nuggets logo">
+          </div>
+        </div>
+        <div class="subtitle">
+          2026-02-28 · Game ID 401810717
+        </div>
+      </div>
+      <div class="scoreline">
+        <div class="scoreline-main">
+          OKC 127
+          &nbsp;–&nbsp;
+          121 DEN
+        </div>
+        <div class="scoreline-teams">
+          Oklahoma City Thunder vs Denver Nuggets
+        </div>
+      </div>
+    </header>
+
+    <div class="pill-row">
+      <div class="pill">Denver Nuggets (Away)</div>
+      <div class="pill">Oklahoma City Thunder (Home)</div>
+      <div class="pill">Season 2026</div>
+    </div>
+
+    <main class="layout">
+      <!-- NEW: Game Summary Card -->
+      
+      
+      
+      
+      
+      
+      <section class="card">
+        <div class="section-label">Game Summary</div>
+        <h2>Quick Overview</h2>
+        <div class="summary-grid">
+          <div class="summary-box">
+            <h4>Final Result</h4>
+            <p>
+              <span class="summary-highlight">Oklahoma City Thunder</span> defeated 
+              Denver Nuggets by <span class="summary-highlight">6</span> points
+            </p>
+            <p style="font-size: 20px; margin-top: 8px; font-weight: 700; color: var(--okc-orange);">
+              OKC 127 – 121 DEN
+            </p>
+          </div>
+
+          <div class="summary-box">
+            <h4>Leading Scorers</h4>
+            
+            
+            <p>
+              <span class="summary-highlight">OKC:</span>
+              Shai Gilgeous-Alexander (36 pts)
+            </p>
+            <p>
+              <span class="summary-highlight">DEN:</span>
+              Jamal Murray (39 pts)
+            </p>
+          </div>
+
+          <div class="summary-box">
+            <h4>Key Stats</h4>
+            
+            
+            <p>
+              Largest Lead: 
+              <span class="summary-highlight">
+                
+                  DEN (16)
+                
+              </span>
+            </p>
+            <p>
+              FG%: OKC 
+              46.5%
+              vs DEN 
+              41.7%
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <!-- Score by quarter + largest lead -->
+      <section class="card">
+        <div class="section-label">Score Summary</div>
+        <h2>
+          Score by Quarter
+          <span style="font-size: 13px; font-weight: 400; color: var(--text-muted);">
+            Largest lead: 9 (OKC) /
+            16 (DEN)
+          </span>
+        </h2>
+        <table class="score-by-quarter-table">
+          <thead>
+            <tr>
+              <th>Team</th>
+              
+                <th>Q1</th>
+              
+                <th>Q2</th>
+              
+                <th>Q3</th>
+              
+                <th>Q4</th>
+              
+                <th>Q5</th>
+              
+              <th>Total</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Away row first, home row second - with winner highlighting -->
+            <tr class="">
+              <td class="team-name-cell">DEN</td>
+              
+                <td>33</td>
+              
+                <td>26</td>
+              
+                <td>24</td>
+              
+                <td>24</td>
+              
+                <td>14</td>
+              
+              <td>121</td>
+            </tr>
+            <tr class="winner-row">
+              <td class="team-name-cell">OKC</td>
+              
+                <td>19</td>
+              
+                <td>31</td>
+              
+                <td>27</td>
+              
+                <td>30</td>
+              
+                <td>20</td>
+              
+              <td>127</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Game flow using runs data - NOW IN TABLE FORMAT -->
+      <section class="card">
+        <div class="section-label">Game Flow</div>
+        <h2>Scoring Runs</h2>
+
+        
+        
+        
+        
+
+        <div class="quarters-wrapper">
+          <!-- 7+ unanswered runs -->
+          <div class="quarter-block">
+            <div class="quarter-header">
+              <div class="quarter-header-left">7+ Unanswered Runs</div>
+              <div class="quarter-header-right">
+                Based on ESPN play-by-play scoring events.
+              </div>
+            </div>
+            
+              <table class="runs-table">
+                <thead>
+                  <tr>
+                    <th>Team</th>
+                    <th>Run</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Final Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>7-0</td>
+                      <td>Q1 9:35</td>
+                      <td>Q1 7:35</td>
+                      <td>DEN 10 – 11 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">DEN</td>
+                      <td>15-0</td>
+                      <td>Q1 5:39</td>
+                      <td>Q1 2:01</td>
+                      <td>DEN 27 – 15 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>8-0</td>
+                      <td>Q2 10:14</td>
+                      <td>Q2 8:14</td>
+                      <td>DEN 38 – 31 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>7-0</td>
+                      <td>Q3 1:57</td>
+                      <td>Q3 27.9</td>
+                      <td>DEN 83 – 77 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>8-0</td>
+                      <td>Q4 11:11</td>
+                      <td>Q4 9:16</td>
+                      <td>DEN 86 – 88 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">DEN</td>
+                      <td>7-0</td>
+                      <td>Q4 6:10</td>
+                      <td>Q4 5:01</td>
+                      <td>DEN 100 – 97 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>8-0</td>
+                      <td>Q4 3:05</td>
+                      <td>Q4 38.0</td>
+                      <td>DEN 107 – 107 OKC</td>
+                    </tr>
+                  
+                </tbody>
+              </table>
+            
+          </div>
+
+          <!-- 8+ net runs -->
+          <div class="quarter-block">
+            <div class="quarter-header">
+              <div class="quarter-header-left">8+ Net Runs (Scoreboard Margin)</div>
+              <div class="quarter-header-right">
+                Net swings in margin from a given scoring stretch.
+              </div>
+            </div>
+            
+              <div class="empty-state">No 8+ net runs by either team.</div>
+            
+          </div>
+
+          <!-- Highlight runs -->
+          <div class="quarter-block">
+            <div class="quarter-header">
+              <div class="quarter-header-left">Highlight Runs (≥8 pts, opponent ≤5)</div>
+              <div class="quarter-header-right">
+                "Start at each scoring play" logic: best run per start.
+              </div>
+            </div>
+            
+              <table class="runs-table">
+                <thead>
+                  <tr>
+                    <th>Team</th>
+                    <th>Run</th>
+                    <th>Net</th>
+                    <th>Start</th>
+                    <th>End</th>
+                    <th>Final Score</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">DEN</td>
+                      <td>23–4</td>
+                      <td>+19</td>
+                      <td>Q1 7:35</td>
+                      <td>Q1 1:13</td>
+                      <td>DEN 30 – 15 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">DEN</td>
+                      <td>20–4</td>
+                      <td>+16</td>
+                      <td>Q1 7:18</td>
+                      <td>Q1 1:13</td>
+                      <td>DEN 30 – 15 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">DEN</td>
+                      <td>21–4</td>
+                      <td>+17</td>
+                      <td>Q1 5:39</td>
+                      <td>Q1 43.9</td>
+                      <td>DEN 33 – 17 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">DEN</td>
+                      <td>18–4</td>
+                      <td>+14</td>
+                      <td>Q1 4:48</td>
+                      <td>Q1 43.9</td>
+                      <td>DEN 33 – 17 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">DEN</td>
+                      <td>17–4</td>
+                      <td>+13</td>
+                      <td>Q1 4:48</td>
+                      <td>Q1 43.9</td>
+                      <td>DEN 33 – 17 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">DEN</td>
+                      <td>16–4</td>
+                      <td>+12</td>
+                      <td>Q1 3:59</td>
+                      <td>Q1 43.9</td>
+                      <td>DEN 33 – 17 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">DEN</td>
+                      <td>13–4</td>
+                      <td>+9</td>
+                      <td>Q1 3:33</td>
+                      <td>Q1 43.9</td>
+                      <td>DEN 33 – 17 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">DEN</td>
+                      <td>12–4</td>
+                      <td>+8</td>
+                      <td>Q1 3:33</td>
+                      <td>Q1 43.9</td>
+                      <td>DEN 33 – 17 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>16–5</td>
+                      <td>+11</td>
+                      <td>Q1 1:03</td>
+                      <td>Q2 8:56</td>
+                      <td>DEN 35 – 31 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>14–2</td>
+                      <td>+12</td>
+                      <td>Q1 33.7</td>
+                      <td>Q2 8:56</td>
+                      <td>DEN 35 – 31 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>13–2</td>
+                      <td>+11</td>
+                      <td>Q1 33.7</td>
+                      <td>Q2 8:56</td>
+                      <td>DEN 35 – 31 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>12–2</td>
+                      <td>+10</td>
+                      <td>Q2 11:13</td>
+                      <td>Q2 8:56</td>
+                      <td>DEN 35 – 31 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>10–2</td>
+                      <td>+8</td>
+                      <td>Q2 10:48</td>
+                      <td>Q2 8:56</td>
+                      <td>DEN 35 – 31 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>15–5</td>
+                      <td>+10</td>
+                      <td>Q2 10:14</td>
+                      <td>Q2 6:04</td>
+                      <td>DEN 40 – 38 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>18–4</td>
+                      <td>+14</td>
+                      <td>Q3 1:57</td>
+                      <td>Q4 9:30</td>
+                      <td>DEN 85 – 88 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>17–4</td>
+                      <td>+13</td>
+                      <td>Q3 1:31</td>
+                      <td>Q4 9:30</td>
+                      <td>DEN 85 – 88 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>15–4</td>
+                      <td>+11</td>
+                      <td>Q3 1:01</td>
+                      <td>Q4 9:30</td>
+                      <td>DEN 85 – 88 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>14–4</td>
+                      <td>+10</td>
+                      <td>Q3 1:01</td>
+                      <td>Q4 9:30</td>
+                      <td>DEN 85 – 88 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>13–4</td>
+                      <td>+9</td>
+                      <td>Q3 34.0</td>
+                      <td>Q4 9:30</td>
+                      <td>DEN 85 – 88 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>11–2</td>
+                      <td>+9</td>
+                      <td>Q4 11:52</td>
+                      <td>Q4 9:30</td>
+                      <td>DEN 85 – 88 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>8–0</td>
+                      <td>+8</td>
+                      <td>Q4 11:11</td>
+                      <td>Q4 9:30</td>
+                      <td>DEN 85 – 88 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">DEN</td>
+                      <td>12–4</td>
+                      <td>+8</td>
+                      <td>Q4 6:10</td>
+                      <td>Q4 3:15</td>
+                      <td>DEN 105 – 99 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>13–2</td>
+                      <td>+11</td>
+                      <td>Q4 3:05</td>
+                      <td>Q5 2:34</td>
+                      <td>DEN 107 – 112 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>12–2</td>
+                      <td>+10</td>
+                      <td>Q4 3:05</td>
+                      <td>Q5 2:34</td>
+                      <td>DEN 107 – 112 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>11–2</td>
+                      <td>+9</td>
+                      <td>Q4 2:01</td>
+                      <td>Q5 2:34</td>
+                      <td>DEN 107 – 112 OKC</td>
+                    </tr>
+                  
+                    
+                    
+                    <tr>
+                      <td class="team-name-cell">OKC</td>
+                      <td>14–5</td>
+                      <td>+9</td>
+                      <td>Q5 4:38</td>
+                      <td>Q5 28.6</td>
+                      <td>DEN 112 – 121 OKC</td>
+                    </tr>
+                  
+                </tbody>
+              </table>
+            
+          </div>
+        </div>
+      </section>
+
+      <!-- Team traditional totals + misc scoring - PTS FIRST WITH SEPARATE % COLUMNS -->
+      <section class="card">
+        <div class="section-label">Team Stats</div>
+        <h2>Full Game – Traditional Team Totals</h2>
+        
+        
+        
+        
+        
+
+        <table>
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th>FG</th>
+              <th>FG%</th>
+              <th>3P</th>
+              <th>3P%</th>
+              <th>FT</th>
+              <th>FT%</th>
+              <th>REB</th>
+              <th>OREB</th>
+              <th>DREB</th>
+              <th>AST</th>
+              <th>STL</th>
+              <th>BLK</th>
+              <th>TOV</th>
+              <th>PF</th>
+            </tr>
+          </thead>
+          <tbody>
+            <!-- Away first, home second - with winner highlighting -->
+            <tr class="">
+              <td class="team-name-cell">DEN</td>
+              <td>43/103</td>
+              <td>41.7%</td>
+              <td>18/48</td>
+              <td>37.5%</td>
+              <td>17/22</td>
+              <td>77.3%</td>
+              <td>0</td>
+              <td>11</td>
+              <td>40</td>
+              <td>27</td>
+              <td>10</td>
+              <td>6</td>
+              <td>17</td>
+              <td>22</td>
+            </tr>
+            <tr class="winner-row">
+              <td class="team-name-cell">OKC</td>
+              <td>46/99</td>
+              <td>46.5%</td>
+              <td>12/35</td>
+              <td>34.3%</td>
+              <td>23/27</td>
+              <td>85.2%</td>
+              <td>0</td>
+              <td>8</td>
+              <td>48</td>
+              <td>29</td>
+              <td>14</td>
+              <td>10</td>
+              <td>12</td>
+              <td>16</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>Team Misc Stats</h3>
+        <table>
+          <thead>
+            <tr>
+              <th>Team</th>
+              <th>Points in the Paint</th>
+              <th>Points off Turnovers</th>
+              <th>Fast Break Points</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr class="">
+              <td class="team-name-cell">DEN</td>
+              <td>46</td>
+              <td>10</td>
+              <td>17</td>
+            </tr>
+            <tr class="winner-row">
+              <td class="team-name-cell">OKC</td>
+              <td>58</td>
+              <td>21</td>
+              <td>16</td>
+            </tr>
+          </tbody>
+        </table>
+      </section>
+
+      <!-- Leaders - BEAUTIFUL CARD LAYOUT -->
+      <section class="card">
+        <div class="section-label">Leaders</div>
+        <h2>Team Leaders – Traditional</h2>
+
+        <div class="leaders-grid">
+          <!-- Points Card -->
+          <div class="leader-card">
+            <div class="leader-stat-name">
+              <span class="leader-stat-icon">🏀</span>
+              Points
+            </div>
+            
+            
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">DEN</div>
+                <span class="leader-player-name">Jamal Murray</span>
+              </div>
+              <span class="leader-team-value">39</span>
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">OKC</div>
+                <span class="leader-player-name">Shai Gilgeous-Alexander</span>
+              </div>
+              <span class="leader-team-value">36</span>
+            </div>
+          </div>
+
+          <!-- Rebounds Card -->
+          <div class="leader-card">
+            <div class="leader-stat-name">
+              <span class="leader-stat-icon">💪</span>
+              Rebounds
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">DEN</div>
+                <span class="leader-player-name">Nikola Jokic</span>
+              </div>
+              <span class="leader-team-value">17</span>
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">OKC</div>
+                <span class="leader-player-name">Chet Holmgren</span>
+              </div>
+              <span class="leader-team-value">21</span>
+            </div>
+          </div>
+
+          <!-- Assists Card -->
+          <div class="leader-card">
+            <div class="leader-stat-name">
+              <span class="leader-stat-icon">🤝</span>
+              Assists
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">DEN</div>
+                <span class="leader-player-name">Nikola Jokic</span>
+              </div>
+              <span class="leader-team-value">14</span>
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">OKC</div>
+                <span class="leader-player-name">Shai Gilgeous-Alexander</span>
+              </div>
+              <span class="leader-team-value">9</span>
+            </div>
+          </div>
+
+          <!-- Steals Card -->
+          <div class="leader-card">
+            <div class="leader-stat-name">
+              <span class="leader-stat-icon">👐</span>
+              Steals
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">DEN</div>
+                <span class="leader-player-name">Bruce Brown</span>
+              </div>
+              <span class="leader-team-value">3</span>
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">OKC</div>
+                <span class="leader-player-name">Isaiah Hartenstein</span>
+              </div>
+              <span class="leader-team-value">2</span>
+            </div>
+          </div>
+
+          <!-- Blocks Card -->
+          <div class="leader-card">
+            <div class="leader-stat-name">
+              <span class="leader-stat-icon">🚫</span>
+              Blocks
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">DEN</div>
+                <span class="leader-player-name">Cameron Johnson</span>
+              </div>
+              <span class="leader-team-value">3</span>
+            </div>
+            <div class="leader-team-row">
+              <div>
+                <div class="leader-team-name">OKC</div>
+                <span class="leader-player-name">Chet Holmgren</span>
+              </div>
+              <span class="leader-team-value">3</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- Full game player box scores (traditional only) - PTS FIRST WITH STANDOUT INDICATORS -->
+      <section class="card">
+        <div class="section-label">Full Game Box Score</div>
+        <h2>Traditional – Players</h2>
+
+        
+          
+          
+          <h3>Denver Nuggets (DEN)</h3>
+          <div class="player-table-wrapper">
+            <table class="player-table">
+            <colgroup>
+              <col class="col-player">
+              <col class="col-min">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>MIN</th>
+                <th class="pts-highlight">PTS</th>
+                <th>FG</th>
+                <th>FG%</th>
+                <th>3P</th>
+                <th>3P%</th>
+                <th>FT</th>
+                <th>FT%</th>
+                <th>REB</th>
+                <th>OREB</th>
+                <th>DREB</th>
+                <th>AST</th>
+                <th>STL</th>
+                <th>BLK</th>
+                <th>TOV</th>
+                <th>PF</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Cameron Johnson</td>
+                  <td>40</td>
+                  <td class="pts-highlight ">7</td>
+                  <td>2/7</td>
+                  <td>28.6%</td>
+                  <td>1/4</td>
+                  <td>25.0%</td>
+                  <td>2/2</td>
+                  <td>100.0%</td>
+                  <td >8</td>
+                  <td>1</td>
+                  <td>7</td>
+                  <td >1</td>
+                  <td>0</td>
+                  <td>3</td>
+                  <td>3</td>
+                  <td>4</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell double-double">Nikola Jokic</td>
+                  <td>45</td>
+                  <td class="pts-highlight standout-stat">23</td>
+                  <td>9/25</td>
+                  <td>36.0%</td>
+                  <td>2/10</td>
+                  <td>20.0%</td>
+                  <td>3/5</td>
+                  <td>60.0%</td>
+                  <td class="standout-stat">17</td>
+                  <td>2</td>
+                  <td>15</td>
+                  <td class="standout-stat">14</td>
+                  <td>1</td>
+                  <td>0</td>
+                  <td>3</td>
+                  <td>3</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Jamal Murray</td>
+                  <td>47</td>
+                  <td class="pts-highlight standout-stat">39</td>
+                  <td>12/26</td>
+                  <td>46.2%</td>
+                  <td>7/13</td>
+                  <td>53.8%</td>
+                  <td>8/10</td>
+                  <td>80.0%</td>
+                  <td >8</td>
+                  <td>2</td>
+                  <td>6</td>
+                  <td >6</td>
+                  <td>2</td>
+                  <td>1</td>
+                  <td>2</td>
+                  <td>5</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Christian Braun</td>
+                  <td>45</td>
+                  <td class="pts-highlight standout-stat">23</td>
+                  <td>8/18</td>
+                  <td>44.4%</td>
+                  <td>3/10</td>
+                  <td>30.0%</td>
+                  <td>4/5</td>
+                  <td>80.0%</td>
+                  <td >8</td>
+                  <td>4</td>
+                  <td>4</td>
+                  <td >2</td>
+                  <td>1</td>
+                  <td>2</td>
+                  <td>3</td>
+                  <td>4</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Julian Strawther</td>
+                  <td>15</td>
+                  <td class="pts-highlight ">0</td>
+                  <td>0/3</td>
+                  <td>0.0%</td>
+                  <td>0/2</td>
+                  <td>0.0%</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >3</td>
+                  <td>0</td>
+                  <td>3</td>
+                  <td >2</td>
+                  <td>1</td>
+                  <td>0</td>
+                  <td>1</td>
+                  <td>1</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Zeke Nnaji</td>
+                  <td>--</td>
+                  <td class="pts-highlight ">0</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Spencer Jones</td>
+                  <td>2</td>
+                  <td class="pts-highlight ">0</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>1</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Jonas Valanciunas</td>
+                  <td>8</td>
+                  <td class="pts-highlight ">6</td>
+                  <td>3/5</td>
+                  <td>60.0%</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >2</td>
+                  <td>0</td>
+                  <td>2</td>
+                  <td >0</td>
+                  <td>1</td>
+                  <td>0</td>
+                  <td>2</td>
+                  <td>1</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Tim Hardaway Jr.</td>
+                  <td>33</td>
+                  <td class="pts-highlight ">16</td>
+                  <td>6/12</td>
+                  <td>50.0%</td>
+                  <td>4/7</td>
+                  <td>57.1%</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >2</td>
+                  <td>1</td>
+                  <td>1</td>
+                  <td >1</td>
+                  <td>1</td>
+                  <td>0</td>
+                  <td>1</td>
+                  <td>2</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Bruce Brown</td>
+                  <td>29</td>
+                  <td class="pts-highlight ">7</td>
+                  <td>3/7</td>
+                  <td>42.9%</td>
+                  <td>1/2</td>
+                  <td>50.0%</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >3</td>
+                  <td>1</td>
+                  <td>2</td>
+                  <td >1</td>
+                  <td>3</td>
+                  <td>0</td>
+                  <td>2</td>
+                  <td>1</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">DaRon Holmes II</td>
+                  <td>None</td>
+                  <td class="pts-highlight ">0</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Jalen Pickett</td>
+                  <td>None</td>
+                  <td class="pts-highlight ">0</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">KJ Simpson</td>
+                  <td>None</td>
+                  <td class="pts-highlight ">0</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                </tr>
+                
+              
+
+              <tr class="totals-row">
+                <td class="team-name-cell">Team Totals</td>
+                <td></td>
+                <td class="pts-highlight">121</td>
+                <td>43/103</td>
+                <td>41.7%</td>
+                <td>18/48</td>
+                <td>37.5%</td>
+                <td>17/22</td>
+                <td>77.3%</td>
+                <td>51</td>
+                <td>11</td>
+                <td>40</td>
+                <td>27</td>
+                <td>10</td>
+                <td>6</td>
+                <td>17</td>
+                <td>22</td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+        
+          
+          
+          <h3>Oklahoma City Thunder (OKC)</h3>
+          <div class="player-table-wrapper">
+            <table class="player-table">
+            <colgroup>
+              <col class="col-player">
+              <col class="col-min">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+              <col class="col-stat">
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Player</th>
+                <th>MIN</th>
+                <th class="pts-highlight">PTS</th>
+                <th>FG</th>
+                <th>FG%</th>
+                <th>3P</th>
+                <th>3P%</th>
+                <th>FT</th>
+                <th>FT%</th>
+                <th>REB</th>
+                <th>OREB</th>
+                <th>DREB</th>
+                <th>AST</th>
+                <th>STL</th>
+                <th>BLK</th>
+                <th>TOV</th>
+                <th>PF</th>
+              </tr>
+            </thead>
+            <tbody>
+              
+
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Isaiah Hartenstein</td>
+                  <td>25</td>
+                  <td class="pts-highlight ">9</td>
+                  <td>4/6</td>
+                  <td>66.7%</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>1/2</td>
+                  <td>50.0%</td>
+                  <td >8</td>
+                  <td>3</td>
+                  <td>5</td>
+                  <td >5</td>
+                  <td>2</td>
+                  <td>2</td>
+                  <td>0</td>
+                  <td>3</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell double-double">Chet Holmgren</td>
+                  <td>38</td>
+                  <td class="pts-highlight ">15</td>
+                  <td>5/8</td>
+                  <td>62.5%</td>
+                  <td>1/2</td>
+                  <td>50.0%</td>
+                  <td>4/6</td>
+                  <td>66.7%</td>
+                  <td class="standout-stat">21</td>
+                  <td>2</td>
+                  <td>19</td>
+                  <td >3</td>
+                  <td>1</td>
+                  <td>3</td>
+                  <td>1</td>
+                  <td>0</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Shai Gilgeous-Alexander</td>
+                  <td>34</td>
+                  <td class="pts-highlight standout-stat">36</td>
+                  <td>12/29</td>
+                  <td>41.4%</td>
+                  <td>0/3</td>
+                  <td>0.0%</td>
+                  <td>12/13</td>
+                  <td>92.3%</td>
+                  <td >3</td>
+                  <td>0</td>
+                  <td>3</td>
+                  <td >9</td>
+                  <td>2</td>
+                  <td>2</td>
+                  <td>1</td>
+                  <td>0</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Luguentz Dort</td>
+                  <td>28</td>
+                  <td class="pts-highlight ">8</td>
+                  <td>3/7</td>
+                  <td>42.9%</td>
+                  <td>2/6</td>
+                  <td>33.3%</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >6</td>
+                  <td>1</td>
+                  <td>5</td>
+                  <td >1</td>
+                  <td>1</td>
+                  <td>0</td>
+                  <td>1</td>
+                  <td>5</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Cason Wallace</td>
+                  <td>36</td>
+                  <td class="pts-highlight ">10</td>
+                  <td>3/10</td>
+                  <td>30.0%</td>
+                  <td>0/3</td>
+                  <td>0.0%</td>
+                  <td>4/4</td>
+                  <td>100.0%</td>
+                  <td >4</td>
+                  <td>1</td>
+                  <td>3</td>
+                  <td >3</td>
+                  <td>1</td>
+                  <td>2</td>
+                  <td>4</td>
+                  <td>3</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Jaylin Williams</td>
+                  <td>26</td>
+                  <td class="pts-highlight ">12</td>
+                  <td>4/7</td>
+                  <td>57.1%</td>
+                  <td>2/4</td>
+                  <td>50.0%</td>
+                  <td>2/2</td>
+                  <td>100.0%</td>
+                  <td >5</td>
+                  <td>0</td>
+                  <td>5</td>
+                  <td >3</td>
+                  <td>0</td>
+                  <td>1</td>
+                  <td>1</td>
+                  <td>2</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Alex Caruso</td>
+                  <td>28</td>
+                  <td class="pts-highlight ">12</td>
+                  <td>5/11</td>
+                  <td>45.5%</td>
+                  <td>2/6</td>
+                  <td>33.3%</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >1</td>
+                  <td>0</td>
+                  <td>1</td>
+                  <td >1</td>
+                  <td>2</td>
+                  <td>0</td>
+                  <td>1</td>
+                  <td>1</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Isaiah Joe</td>
+                  <td>23</td>
+                  <td class="pts-highlight ">9</td>
+                  <td>3/6</td>
+                  <td>50.0%</td>
+                  <td>3/5</td>
+                  <td>60.0%</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >4</td>
+                  <td>1</td>
+                  <td>3</td>
+                  <td >3</td>
+                  <td>2</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Aaron Wiggins</td>
+                  <td>8</td>
+                  <td class="pts-highlight ">2</td>
+                  <td>1/7</td>
+                  <td>14.3%</td>
+                  <td>0/3</td>
+                  <td>0.0%</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >2</td>
+                  <td>0</td>
+                  <td>2</td>
+                  <td >0</td>
+                  <td>2</td>
+                  <td>0</td>
+                  <td>1</td>
+                  <td>1</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Jared McCain</td>
+                  <td>19</td>
+                  <td class="pts-highlight ">14</td>
+                  <td>6/8</td>
+                  <td>75.0%</td>
+                  <td>2/3</td>
+                  <td>66.7%</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >2</td>
+                  <td>0</td>
+                  <td>2</td>
+                  <td >1</td>
+                  <td>1</td>
+                  <td>0</td>
+                  <td>2</td>
+                  <td>1</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Buddy Boeheim</td>
+                  <td>None</td>
+                  <td class="pts-highlight ">0</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Kenrich Williams</td>
+                  <td>None</td>
+                  <td class="pts-highlight ">0</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                </tr>
+                
+              
+                
+                
+                <tr>
+                  <td class="team-name-cell ">Nikola Topic</td>
+                  <td>None</td>
+                  <td class="pts-highlight ">0</td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td>0/0</td>
+                  <td></td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td >0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                  <td>0</td>
+                </tr>
+                
+              
+
+              <tr class="totals-row">
+                <td class="team-name-cell">Team Totals</td>
+                <td></td>
+                <td class="pts-highlight">127</td>
+                <td>46/99</td>
+                <td>46.5%</td>
+                <td>12/35</td>
+                <td>34.3%</td>
+                <td>23/27</td>
+                <td>85.2%</td>
+                <td>56</td>
+                <td>8</td>
+                <td>48</td>
+                <td>29</td>
+                <td>14</td>
+                <td>10</td>
+                <td>12</td>
+                <td>16</td>
+              </tr>
+            </tbody>
+          </table>
+          </div>
+        
+      </section>
+
+      <!-- Quarter-by-quarter traditional (team + players) - COLLAPSIBLE QUARTERS -->
+      <section class="card">
+        <div class="section-label">Quarter by Quarter</div>
+        <h2>Traditional – Team & Players (by quarter)</h2>
+
+        
+        
+        
+
+        <div class="quarters-wrapper">
+          
+          
+            
+            
+            
+
+            <div class="quarter-block">
+              <div class="quarter-header collapsible-header" onclick="toggleQuarter('q1')">
+                <span class="toggle-icon" id="toggle-q1"></span>
+                <div class="quarter-header-left">Quarter 1</div>
+                <div class="quarter-header-right">
+                  Score: DEN 33 – 19 OKC
+                </div>
+              </div>
+
+              <div class="collapsible-content" id="content-q1">
+                
+                  
+                  
+
+                  <div class="quarter-card">
+                    <div class="quarter-team-label">
+                      Denver Nuggets (DEN) – Players (Q1)
+                    </div>
+                    <div class="player-table-wrapper">
+                      <table class="player-table">
+                      <colgroup>
+                        <col class="col-player">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th class="pts-highlight">PTS</th>
+                          <th>FG</th>
+                          <th>FG%</th>
+                          <th>3P</th>
+                          <th>3P%</th>
+                          <th>FT</th>
+                          <th>FT%</th>
+                          <th>REB</th>
+                          <th>OREB</th>
+                          <th>DREB</th>
+                          <th>AST</th>
+                          <th>STL</th>
+                          <th>BLK</th>
+                          <th>TOV</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                          <tr>
+                            <td class="team-name-cell">Nikola Jokic</td>
+                            <td class="pts-highlight ">6</td>
+                            <td>2/8</td>
+                            <td>25.0%</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>2/3</td>
+                            <td>66.7%</td>
+                            <td>9</td>
+                            <td>0</td>
+                            <td>9</td>
+                            <td>3</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Christian Braun</td>
+                            <td class="pts-highlight standout-stat">10</td>
+                            <td>3/4</td>
+                            <td>75.0%</td>
+                            <td>2/3</td>
+                            <td>66.7%</td>
+                            <td>2/3</td>
+                            <td>66.7%</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Cameron Johnson</td>
+                            <td class="pts-highlight ">3</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jamal Murray</td>
+                            <td class="pts-highlight ">5</td>
+                            <td>1/5</td>
+                            <td>20.0%</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>2/3</td>
+                            <td>66.7%</td>
+                            <td>3</td>
+                            <td>1</td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Julian Strawther</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Bruce Brown</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>3</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Tim Hardaway Jr.</td>
+                            <td class="pts-highlight ">9</td>
+                            <td>3/3</td>
+                            <td>100.0%</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+
+                        <tr class="totals-row">
+                          <td class="team-name-cell">Team Totals</td>
+                          <td class="pts-highlight">33</td>
+                          <td>10/22</td>
+                          <td>45.5%</td>
+                          <td>5/9</td>
+                          <td>55.6%</td>
+                          <td>6/9</td>
+                          <td>66.7%</td>
+                          <td>18</td>
+                          <td>2</td>
+                          <td>16</td>
+                          <td>6</td>
+                          <td>2</td>
+                          <td>0</td>
+                          <td>6</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
+                  </div>
+                
+                  
+                  
+
+                  <div class="quarter-card">
+                    <div class="quarter-team-label">
+                      Oklahoma City Thunder (OKC) – Players (Q1)
+                    </div>
+                    <div class="player-table-wrapper">
+                      <table class="player-table">
+                      <colgroup>
+                        <col class="col-player">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th class="pts-highlight">PTS</th>
+                          <th>FG</th>
+                          <th>FG%</th>
+                          <th>3P</th>
+                          <th>3P%</th>
+                          <th>FT</th>
+                          <th>FT%</th>
+                          <th>REB</th>
+                          <th>OREB</th>
+                          <th>DREB</th>
+                          <th>AST</th>
+                          <th>STL</th>
+                          <th>BLK</th>
+                          <th>TOV</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                          <tr>
+                            <td class="team-name-cell">Chet Holmgren</td>
+                            <td class="pts-highlight ">3</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>4</td>
+                            <td>0</td>
+                            <td>4</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Luguentz Dort</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>3</td>
+                            <td>0</td>
+                            <td>3</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Shai Gilgeous-Alexander</td>
+                            <td class="pts-highlight ">8</td>
+                            <td>3/7</td>
+                            <td>42.9%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>2/2</td>
+                            <td>100.0%</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Isaiah Hartenstein</td>
+                            <td class="pts-highlight ">4</td>
+                            <td>2/2</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>4</td>
+                            <td>2</td>
+                            <td>2</td>
+                            <td>3</td>
+                            <td>0</td>
+                            <td>2</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Cason Wallace</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/4</td>
+                            <td>25.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Aaron Wiggins</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/6</td>
+                            <td>16.7%</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Isaiah Joe</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Alex Caruso</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jaylin Williams</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                          </tr>
+                        
+
+                        <tr class="totals-row">
+                          <td class="team-name-cell">Team Totals</td>
+                          <td class="pts-highlight">19</td>
+                          <td>8/25</td>
+                          <td>32.0%</td>
+                          <td>1/8</td>
+                          <td>12.5%</td>
+                          <td>2/4</td>
+                          <td>50.0%</td>
+                          <td>16</td>
+                          <td>3</td>
+                          <td>13</td>
+                          <td>4</td>
+                          <td>3</td>
+                          <td>3</td>
+                          <td>3</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
+                  </div>
+                
+              </div>
+            </div>
+          
+            
+            
+            
+
+            <div class="quarter-block">
+              <div class="quarter-header collapsible-header" onclick="toggleQuarter('q2')">
+                <span class="toggle-icon" id="toggle-q2"></span>
+                <div class="quarter-header-left">Quarter 2</div>
+                <div class="quarter-header-right">
+                  Score: DEN 26 – 31 OKC
+                </div>
+              </div>
+
+              <div class="collapsible-content" id="content-q2">
+                
+                  
+                  
+
+                  <div class="quarter-card">
+                    <div class="quarter-team-label">
+                      Denver Nuggets (DEN) – Players (Q2)
+                    </div>
+                    <div class="player-table-wrapper">
+                      <table class="player-table">
+                      <colgroup>
+                        <col class="col-player">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th class="pts-highlight">PTS</th>
+                          <th>FG</th>
+                          <th>FG%</th>
+                          <th>3P</th>
+                          <th>3P%</th>
+                          <th>FT</th>
+                          <th>FT%</th>
+                          <th>REB</th>
+                          <th>OREB</th>
+                          <th>DREB</th>
+                          <th>AST</th>
+                          <th>STL</th>
+                          <th>BLK</th>
+                          <th>TOV</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jonas Valanciunas</td>
+                            <td class="pts-highlight ">4</td>
+                            <td>2/4</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Tim Hardaway Jr.</td>
+                            <td class="pts-highlight ">3</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Cameron Johnson</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Bruce Brown</td>
+                            <td class="pts-highlight ">7</td>
+                            <td>3/4</td>
+                            <td>75.0%</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jamal Murray</td>
+                            <td class="pts-highlight ">3</td>
+                            <td>1/3</td>
+                            <td>33.3%</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Christian Braun</td>
+                            <td class="pts-highlight ">4</td>
+                            <td>1/3</td>
+                            <td>33.3%</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>2/2</td>
+                            <td>100.0%</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Nikola Jokic</td>
+                            <td class="pts-highlight ">5</td>
+                            <td>2/3</td>
+                            <td>66.7%</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Julian Strawther</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+
+                        <tr class="totals-row">
+                          <td class="team-name-cell">Team Totals</td>
+                          <td class="pts-highlight">26</td>
+                          <td>10/22</td>
+                          <td>45.5%</td>
+                          <td>3/8</td>
+                          <td>37.5%</td>
+                          <td>2/2</td>
+                          <td>100.0%</td>
+                          <td>8</td>
+                          <td>4</td>
+                          <td>4</td>
+                          <td>6</td>
+                          <td>4</td>
+                          <td>0</td>
+                          <td>3</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
+                  </div>
+                
+                  
+                  
+
+                  <div class="quarter-card">
+                    <div class="quarter-team-label">
+                      Oklahoma City Thunder (OKC) – Players (Q2)
+                    </div>
+                    <div class="player-table-wrapper">
+                      <table class="player-table">
+                      <colgroup>
+                        <col class="col-player">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th class="pts-highlight">PTS</th>
+                          <th>FG</th>
+                          <th>FG%</th>
+                          <th>3P</th>
+                          <th>3P%</th>
+                          <th>FT</th>
+                          <th>FT%</th>
+                          <th>REB</th>
+                          <th>OREB</th>
+                          <th>DREB</th>
+                          <th>AST</th>
+                          <th>STL</th>
+                          <th>BLK</th>
+                          <th>TOV</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jaylin Williams</td>
+                            <td class="pts-highlight ">3</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Luguentz Dort</td>
+                            <td class="pts-highlight ">3</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Shai Gilgeous-Alexander</td>
+                            <td class="pts-highlight standout-stat">10</td>
+                            <td>4/6</td>
+                            <td>66.7%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2/2</td>
+                            <td>100.0%</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>2</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Isaiah Joe</td>
+                            <td class="pts-highlight ">3</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jared McCain</td>
+                            <td class="pts-highlight ">6</td>
+                            <td>3/4</td>
+                            <td>75.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Chet Holmgren</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>4</td>
+                            <td>1</td>
+                            <td>3</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>2</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Alex Caruso</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Isaiah Hartenstein</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Cason Wallace</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+
+                        <tr class="totals-row">
+                          <td class="team-name-cell">Team Totals</td>
+                          <td class="pts-highlight">31</td>
+                          <td>13/20</td>
+                          <td>65.0%</td>
+                          <td>3/7</td>
+                          <td>42.9%</td>
+                          <td>2/2</td>
+                          <td>100.0%</td>
+                          <td>11</td>
+                          <td>3</td>
+                          <td>8</td>
+                          <td>8</td>
+                          <td>2</td>
+                          <td>4</td>
+                          <td>4</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
+                  </div>
+                
+              </div>
+            </div>
+          
+            
+            
+            
+
+            <div class="quarter-block">
+              <div class="quarter-header collapsible-header" onclick="toggleQuarter('q3')">
+                <span class="toggle-icon" id="toggle-q3"></span>
+                <div class="quarter-header-left">Quarter 3</div>
+                <div class="quarter-header-right">
+                  Score: DEN 24 – 27 OKC
+                </div>
+              </div>
+
+              <div class="collapsible-content" id="content-q3">
+                
+                  
+                  
+
+                  <div class="quarter-card">
+                    <div class="quarter-team-label">
+                      Denver Nuggets (DEN) – Players (Q3)
+                    </div>
+                    <div class="player-table-wrapper">
+                      <table class="player-table">
+                      <colgroup>
+                        <col class="col-player">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th class="pts-highlight">PTS</th>
+                          <th>FG</th>
+                          <th>FG%</th>
+                          <th>3P</th>
+                          <th>3P%</th>
+                          <th>FT</th>
+                          <th>FT%</th>
+                          <th>REB</th>
+                          <th>OREB</th>
+                          <th>DREB</th>
+                          <th>AST</th>
+                          <th>STL</th>
+                          <th>BLK</th>
+                          <th>TOV</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                          <tr>
+                            <td class="team-name-cell">Julian Strawther</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>3</td>
+                            <td>0</td>
+                            <td>3</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Cameron Johnson</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>2</td>
+                            <td>2</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Christian Braun</td>
+                            <td class="pts-highlight ">4</td>
+                            <td>2/6</td>
+                            <td>33.3%</td>
+                            <td>0/3</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>3</td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jamal Murray</td>
+                            <td class="pts-highlight standout-stat">14</td>
+                            <td>5/6</td>
+                            <td>83.3%</td>
+                            <td>2/3</td>
+                            <td>66.7%</td>
+                            <td>2/2</td>
+                            <td>100.0%</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Nikola Jokic</td>
+                            <td class="pts-highlight ">4</td>
+                            <td>2/7</td>
+                            <td>28.6%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>5</td>
+                            <td>2</td>
+                            <td>3</td>
+                            <td>5</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Tim Hardaway Jr.</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/4</td>
+                            <td>0.0%</td>
+                            <td>0/3</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Bruce Brown</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+
+                        <tr class="totals-row">
+                          <td class="team-name-cell">Team Totals</td>
+                          <td class="pts-highlight">24</td>
+                          <td>10/26</td>
+                          <td>38.5%</td>
+                          <td>2/12</td>
+                          <td>16.7%</td>
+                          <td>2/2</td>
+                          <td>100.0%</td>
+                          <td>17</td>
+                          <td>5</td>
+                          <td>12</td>
+                          <td>7</td>
+                          <td>1</td>
+                          <td>3</td>
+                          <td>3</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
+                  </div>
+                
+                  
+                  
+
+                  <div class="quarter-card">
+                    <div class="quarter-team-label">
+                      Oklahoma City Thunder (OKC) – Players (Q3)
+                    </div>
+                    <div class="player-table-wrapper">
+                      <table class="player-table">
+                      <colgroup>
+                        <col class="col-player">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th class="pts-highlight">PTS</th>
+                          <th>FG</th>
+                          <th>FG%</th>
+                          <th>3P</th>
+                          <th>3P%</th>
+                          <th>FT</th>
+                          <th>FT%</th>
+                          <th>REB</th>
+                          <th>OREB</th>
+                          <th>DREB</th>
+                          <th>AST</th>
+                          <th>STL</th>
+                          <th>BLK</th>
+                          <th>TOV</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                          <tr>
+                            <td class="team-name-cell">Chet Holmgren</td>
+                            <td class="pts-highlight ">4</td>
+                            <td>2/4</td>
+                            <td>50.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>3</td>
+                            <td>0</td>
+                            <td>3</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Isaiah Hartenstein</td>
+                            <td class="pts-highlight ">3</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Cason Wallace</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Shai Gilgeous-Alexander</td>
+                            <td class="pts-highlight standout-stat">14</td>
+                            <td>4/10</td>
+                            <td>40.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>6/7</td>
+                            <td>85.7%</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>5</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Luguentz Dort</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Alex Caruso</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Aaron Wiggins</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Isaiah Joe</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jaylin Williams</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+
+                        <tr class="totals-row">
+                          <td class="team-name-cell">Team Totals</td>
+                          <td class="pts-highlight">27</td>
+                          <td>10/23</td>
+                          <td>43.5%</td>
+                          <td>0/5</td>
+                          <td>0.0%</td>
+                          <td>7/9</td>
+                          <td>77.8%</td>
+                          <td>14</td>
+                          <td>3</td>
+                          <td>11</td>
+                          <td>5</td>
+                          <td>3</td>
+                          <td>0</td>
+                          <td>1</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
+                  </div>
+                
+              </div>
+            </div>
+          
+            
+            
+            
+
+            <div class="quarter-block">
+              <div class="quarter-header collapsible-header" onclick="toggleQuarter('q4')">
+                <span class="toggle-icon" id="toggle-q4"></span>
+                <div class="quarter-header-left">Quarter 4</div>
+                <div class="quarter-header-right">
+                  Score: DEN 24 – 30 OKC
+                </div>
+              </div>
+
+              <div class="collapsible-content" id="content-q4">
+                
+                  
+                  
+
+                  <div class="quarter-card">
+                    <div class="quarter-team-label">
+                      Denver Nuggets (DEN) – Players (Q4)
+                    </div>
+                    <div class="player-table-wrapper">
+                      <table class="player-table">
+                      <colgroup>
+                        <col class="col-player">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th class="pts-highlight">PTS</th>
+                          <th>FG</th>
+                          <th>FG%</th>
+                          <th>3P</th>
+                          <th>3P%</th>
+                          <th>FT</th>
+                          <th>FT%</th>
+                          <th>REB</th>
+                          <th>OREB</th>
+                          <th>DREB</th>
+                          <th>AST</th>
+                          <th>STL</th>
+                          <th>BLK</th>
+                          <th>TOV</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                          <tr>
+                            <td class="team-name-cell">Cameron Johnson</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>2/2</td>
+                            <td>100.0%</td>
+                            <td>4</td>
+                            <td>0</td>
+                            <td>4</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jonas Valanciunas</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>2</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jamal Murray</td>
+                            <td class="pts-highlight ">7</td>
+                            <td>2/7</td>
+                            <td>28.6%</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>3/4</td>
+                            <td>75.0%</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Bruce Brown</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Christian Braun</td>
+                            <td class="pts-highlight ">5</td>
+                            <td>2/3</td>
+                            <td>66.7%</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Nikola Jokic</td>
+                            <td class="pts-highlight ">6</td>
+                            <td>2/3</td>
+                            <td>66.7%</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>3</td>
+                            <td>0</td>
+                            <td>3</td>
+                            <td>4</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Tim Hardaway Jr.</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+
+                        <tr class="totals-row">
+                          <td class="team-name-cell">Team Totals</td>
+                          <td class="pts-highlight">24</td>
+                          <td>8/19</td>
+                          <td>42.1%</td>
+                          <td>2/7</td>
+                          <td>28.6%</td>
+                          <td>6/8</td>
+                          <td>75.0%</td>
+                          <td>11</td>
+                          <td>2</td>
+                          <td>9</td>
+                          <td>6</td>
+                          <td>1</td>
+                          <td>1</td>
+                          <td>5</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
+                  </div>
+                
+                  
+                  
+
+                  <div class="quarter-card">
+                    <div class="quarter-team-label">
+                      Oklahoma City Thunder (OKC) – Players (Q4)
+                    </div>
+                    <div class="player-table-wrapper">
+                      <table class="player-table">
+                      <colgroup>
+                        <col class="col-player">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th class="pts-highlight">PTS</th>
+                          <th>FG</th>
+                          <th>FG%</th>
+                          <th>3P</th>
+                          <th>3P%</th>
+                          <th>FT</th>
+                          <th>FT%</th>
+                          <th>REB</th>
+                          <th>OREB</th>
+                          <th>DREB</th>
+                          <th>AST</th>
+                          <th>STL</th>
+                          <th>BLK</th>
+                          <th>TOV</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                          <tr>
+                            <td class="team-name-cell">Isaiah Joe</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>3</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jared McCain</td>
+                            <td class="pts-highlight ">8</td>
+                            <td>3/4</td>
+                            <td>75.0%</td>
+                            <td>2/2</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jaylin Williams</td>
+                            <td class="pts-highlight ">5</td>
+                            <td>2/4</td>
+                            <td>50.0%</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Luguentz Dort</td>
+                            <td class="pts-highlight ">5</td>
+                            <td>2/3</td>
+                            <td>66.7%</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Chet Holmgren</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>7</td>
+                            <td>1</td>
+                            <td>6</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Shai Gilgeous-Alexander</td>
+                            <td class="pts-highlight ">4</td>
+                            <td>1/6</td>
+                            <td>16.7%</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>2/2</td>
+                            <td>100.0%</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>2</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Cason Wallace</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>2</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Isaiah Hartenstein</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Alex Caruso</td>
+                            <td class="pts-highlight ">6</td>
+                            <td>2/3</td>
+                            <td>66.7%</td>
+                            <td>2/2</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+
+                        <tr class="totals-row">
+                          <td class="team-name-cell">Team Totals</td>
+                          <td class="pts-highlight">30</td>
+                          <td>11/24</td>
+                          <td>45.8%</td>
+                          <td>6/12</td>
+                          <td>50.0%</td>
+                          <td>2/2</td>
+                          <td>100.0%</td>
+                          <td>15</td>
+                          <td>4</td>
+                          <td>11</td>
+                          <td>9</td>
+                          <td>3</td>
+                          <td>2</td>
+                          <td>2</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
+                  </div>
+                
+              </div>
+            </div>
+          
+            
+            
+            
+
+            <div class="quarter-block">
+              <div class="quarter-header collapsible-header" onclick="toggleQuarter('q5')">
+                <span class="toggle-icon" id="toggle-q5"></span>
+                <div class="quarter-header-left">Quarter 5</div>
+                <div class="quarter-header-right">
+                  Score: DEN 14 – 20 OKC
+                </div>
+              </div>
+
+              <div class="collapsible-content" id="content-q5">
+                
+                  
+                  
+
+                  <div class="quarter-card">
+                    <div class="quarter-team-label">
+                      Denver Nuggets (DEN) – Players (Q5)
+                    </div>
+                    <div class="player-table-wrapper">
+                      <table class="player-table">
+                      <colgroup>
+                        <col class="col-player">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th class="pts-highlight">PTS</th>
+                          <th>FG</th>
+                          <th>FG%</th>
+                          <th>3P</th>
+                          <th>3P%</th>
+                          <th>FT</th>
+                          <th>FT%</th>
+                          <th>REB</th>
+                          <th>OREB</th>
+                          <th>DREB</th>
+                          <th>AST</th>
+                          <th>STL</th>
+                          <th>BLK</th>
+                          <th>TOV</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                          <tr>
+                            <td class="team-name-cell">Tim Hardaway Jr.</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Nikola Jokic</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/4</td>
+                            <td>25.0%</td>
+                            <td>0/3</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Christian Braun</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/2</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Cameron Johnson</td>
+                            <td class="pts-highlight ">0</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jamal Murray</td>
+                            <td class="pts-highlight standout-stat">10</td>
+                            <td>3/5</td>
+                            <td>60.0%</td>
+                            <td>3/5</td>
+                            <td>60.0%</td>
+                            <td>1/1</td>
+                            <td>100.0%</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>1</td>
+                          </tr>
+                        
+
+                        <tr class="totals-row">
+                          <td class="team-name-cell">Team Totals</td>
+                          <td class="pts-highlight">14</td>
+                          <td>5/14</td>
+                          <td>35.7%</td>
+                          <td>3/9</td>
+                          <td>33.3%</td>
+                          <td>1/1</td>
+                          <td>100.0%</td>
+                          <td>5</td>
+                          <td>3</td>
+                          <td>2</td>
+                          <td>2</td>
+                          <td>2</td>
+                          <td>2</td>
+                          <td>3</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
+                  </div>
+                
+                  
+                  
+
+                  <div class="quarter-card">
+                    <div class="quarter-team-label">
+                      Oklahoma City Thunder (OKC) – Players (Q5)
+                    </div>
+                    <div class="player-table-wrapper">
+                      <table class="player-table">
+                      <colgroup>
+                        <col class="col-player">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                        <col class="col-stat">
+                      </colgroup>
+                      <thead>
+                        <tr>
+                          <th>Player</th>
+                          <th class="pts-highlight">PTS</th>
+                          <th>FG</th>
+                          <th>FG%</th>
+                          <th>3P</th>
+                          <th>3P%</th>
+                          <th>FT</th>
+                          <th>FT%</th>
+                          <th>REB</th>
+                          <th>OREB</th>
+                          <th>DREB</th>
+                          <th>AST</th>
+                          <th>STL</th>
+                          <th>BLK</th>
+                          <th>TOV</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        
+                          <tr>
+                            <td class="team-name-cell">Chet Holmgren</td>
+                            <td class="pts-highlight ">4</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>4/4</td>
+                            <td>100.0%</td>
+                            <td>3</td>
+                            <td>0</td>
+                            <td>3</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Cason Wallace</td>
+                            <td class="pts-highlight ">6</td>
+                            <td>1/2</td>
+                            <td>50.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>4/4</td>
+                            <td>100.0%</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>2</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Alex Caruso</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>1/3</td>
+                            <td>33.3%</td>
+                            <td>0/1</td>
+                            <td>0.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Isaiah Joe</td>
+                            <td class="pts-highlight ">6</td>
+                            <td>2/2</td>
+                            <td>100.0%</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+                          <tr>
+                            <td class="team-name-cell">Jaylin Williams</td>
+                            <td class="pts-highlight ">2</td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>0/0</td>
+                            <td></td>
+                            <td>2/2</td>
+                            <td>100.0%</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>1</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                            <td>0</td>
+                          </tr>
+                        
+
+                        <tr class="totals-row">
+                          <td class="team-name-cell">Team Totals</td>
+                          <td class="pts-highlight">20</td>
+                          <td>4/7</td>
+                          <td>57.1%</td>
+                          <td>0/1</td>
+                          <td>0.0%</td>
+                          <td>10/10</td>
+                          <td>100.0%</td>
+                          <td>7</td>
+                          <td>1</td>
+                          <td>6</td>
+                          <td>3</td>
+                          <td>3</td>
+                          <td>1</td>
+                          <td>2</td>
+                        </tr>
+                      </tbody>
+                    </table>
+                    </div>
+                  </div>
+                
+              </div>
+            </div>
+          
+        </div>
+      </section>
+
+
+      
+      <!-- Downloads section -->
+      <section class="card">
+        <div class="section-label">Downloads</div>
+        <h2>Play-by-Play & Data Files</h2>
+        <p style="font-size: 13px; color: var(--text-muted); margin-top: 0;">
+          Links below assume the underlying CSV / JSON / other files are deployed alongside this report.
+        </p>
+        <ul class="downloads-list">
+          
+            <li>
+              <a href="https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=401810717">Espn Summary Json</a>
+            </li>
+          
+            <li>
+              <a href="https://site.web.api.espn.com/apis/site/v2/sports/basketball/nba/summary?event=401810717">Play By Play Csv</a>
+            </li>
+          
+        </ul>
+      </section>
+      
+    </main>
+  </div>
+
+  <script>
+    // Toggle quarter-by-quarter sections
+    function toggleQuarter(quarterId) {
+      const content = document.getElementById('content-' + quarterId);
+      const toggle = document.getElementById('toggle-' + quarterId);
+      
+      if (content.classList.contains('collapsed')) {
+        content.classList.remove('collapsed');
+        toggle.classList.remove('collapsed');
+      } else {
+        content.classList.add('collapsed');
+        toggle.classList.add('collapsed');
+      }
+    }
+
+    // Collapse all quarters by default on mobile
+    if (window.innerWidth <= 768) {
+      document.addEventListener('DOMContentLoaded', function() {
+        const quarters = document.querySelectorAll('[id^="content-q"]');
+        quarters.forEach(q => q.classList.add('collapsed'));
+        
+        const toggles = document.querySelectorAll('[id^="toggle-q"]');
+        toggles.forEach(t => t.classList.add('collapsed'));
+      });
+    }
+  </script>
+</body>
+</html>
